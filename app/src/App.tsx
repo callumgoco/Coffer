@@ -14,9 +14,9 @@ import OnboardingPage from './pages/Onboarding'
 import ProtectedRoutes from './pages/Protected'
 import SessionOnly from './pages/SessionOnly'
 
-const Placeholder = ({ title }: { title: string }) => (
-  <div className="card p-6"><h1 className="text-lg font-medium">{title}</h1></div>
-)
+// const Placeholder = ({ title }: { title: string }) => (
+//   <div className="card p-6"><h1 className="text-lg font-medium">{title}</h1></div>
+// )
 
 const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },

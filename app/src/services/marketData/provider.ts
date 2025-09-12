@@ -8,7 +8,7 @@ const avKey: string | undefined = import.meta.env.VITE_ALPHAVANTAGE_API_KEY
 const fmpKey: string | undefined = import.meta.env.VITE_FMP_API_KEY
 
 export class AlphaVantageProvider implements MarketDataProvider {
-  async getQuote(symbol: string) {
+  async getQuote(symbol: string): Promise<{ symbol: string; price: number; source: 'live' | 'mock'; error?: string }> {
     if (!avKey) return { symbol, price: 0, source: 'mock', error: 'missing_api_key' }
     try {
       const base = import.meta.env.DEV ? '/api' : 'https://www.alphavantage.co'
@@ -113,7 +113,7 @@ const searchCache = new Map<string, { results: Array<{ symbol: string; name: str
 const seriesCache = new Map<string, { points: Array<{ date: string; close: number }>; ts: number }>()
 
 export class FmpProvider implements MarketDataProvider {
-  async getQuote(symbol: string) {
+  async getQuote(symbol: string): Promise<{ symbol: string; price: number; source: 'live' | 'mock'; error?: string }> {
     const key = symbol.toUpperCase()
     const now = Date.now()
     const cached = quoteCache.get(key)

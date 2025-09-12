@@ -21,6 +21,7 @@ interface AuthState {
 }
 
 async function fetchProfile(userId: string): Promise<UserProfile | null> {
+  if (!supabase) return null
   const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
   if (error) return null
   if (!data) return null
@@ -49,12 +50,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const session = get().session
     if (!session?.user) return { error: new Error('Not signed in') }
     const payload = { id: session.user.id, email: session.user.email, ...updates }
+    if (!supabase) return { error: new Error('Not configured') }
     const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' })
     if (!error) await get().refreshProfile()
     return { error: error ? new Error(error.message) : null }
   },
 
   async signInWithEmail(email, password) {
+    if (!supabase) return { error: new Error('Not configured') }
     const { error, data } = await supabase.auth.signInWithPassword({ email, password })
     if (!error) {
       set({ session: data.session })
@@ -64,6 +67,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   async signUpWithEmail(email, password) {
+    if (!supabase) return { error: new Error('Not configured') }
     const { error, data } = await supabase.auth.signUp({ email, password })
     if (!error) {
       set({ session: data.session ?? null })
@@ -76,6 +80,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   async signOut() {
+    if (!supabase) return
     await supabase.auth.signOut()
     set({ session: null, profile: null })
   },
@@ -83,6 +88,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
 // Initialize auth state and subscribe to changes
 ;(async () => {
+  if (!supabase) { useAuthStore.setState({ loading: false, initialized: true }); return }
   const { data: { session } } = await supabase.auth.getSession()
   useAuthStore.setState({ session: session ?? null })
   if (session?.user) {

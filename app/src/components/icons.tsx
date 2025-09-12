@@ -1,4 +1,4 @@
-import React from 'react'
+// no React import needed with the automatic JSX runtime
 
 export function PencilIcon({ className = 'w-4 h-4' }: { className?: string }) {
   return (

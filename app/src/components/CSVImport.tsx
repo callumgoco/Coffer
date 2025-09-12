@@ -18,14 +18,14 @@ export function CSVImport({ onRows }: { onRows: (rows: Row[]) => void }) {
     Papa.parse<Row>(file, {
       header: true,
       skipEmptyLines: true,
-      complete: (res) => {
+      complete: (res: any) => {
         if (res.errors?.length) {
           setError(res.errors[0].message)
           return
         }
         onRows((res.data ?? []).filter(Boolean))
       },
-      error: (err) => setError(err.message),
+      error: (err: any) => setError(err.message),
     })
     e.currentTarget.value = ''
   }

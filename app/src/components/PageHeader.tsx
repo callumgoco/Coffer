@@ -1,4 +1,5 @@
-import { ReactNode, useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export default function PageHeader({ title, subtitle, actions }: { title: ReactNode; subtitle?: ReactNode; actions?: ReactNode }) {
   const [open, setOpen] = useState(false)

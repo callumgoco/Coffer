@@ -1,4 +1,4 @@
-import React from 'react'
+// no React import needed with the automatic JSX runtime
 
 type Props = {
   value: number

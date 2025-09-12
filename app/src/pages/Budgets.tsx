@@ -157,7 +157,7 @@ export default function BudgetsPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Metric label="Total limit" value={`${totals.symbol}${totals.totalLimit.toFixed(2)}`} />
-            <Metric label="Total spent" value={`${totals.symbol}${totals.totalSpent.toFixed(2)}`} sub={`${totals.pct}% used`} />
+            <Metric label="Total spent" value={`${totals.symbol}${totals.totalSpent.toFixed(2)}`} />
             <Metric label="Remaining" value={`${totals.symbol}${totals.remaining.toFixed(2)}`} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">

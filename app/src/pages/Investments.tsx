@@ -20,6 +20,7 @@ export default function InvestmentsPage() {
   const { data: snapshots } = usePortfolioSnapshots()
   const { baseCurrency } = useCurrencyStore()
   const { data: rates } = useRates(baseCurrency)
+  // watchlist UI removed; keep placeholder to avoid breaking layout
   const { data: watchlist } = { data: [] as any }
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Array<{ symbol: string; name: string; region: string; currency?: string }>>([])
@@ -77,9 +78,9 @@ export default function InvestmentsPage() {
     setRateLimited(false)
     setSearchError(null)
     const useFmp = Boolean(import.meta.env.VITE_FMP_API_KEY)
-    const r = useFmp ? await fmp.searchSymbols(trimmed) : await alphaVantage.searchSymbols(trimmed)
+    const r: any = useFmp ? await fmp.searchSymbols(trimmed) : await alphaVantage.searchSymbols(trimmed)
     setResults(r.results)
-    setRateLimited(!!r.rateLimited)
+    setRateLimited(Boolean(r.rateLimited))
     setSearchError(r.error ?? null)
     setSearching(false)
   }
@@ -249,10 +250,10 @@ export default function InvestmentsPage() {
       ) : null}
       <Card className="mt-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <Metric label="Total value" value={formatMoney(totalCurrent, baseCurrency)} hint={`${baseCurrency}`} />
-        <Metric label="Book cost" value={formatMoney(totalCost, baseCurrency)} hint={`${baseCurrency}`} />
-        <Metric label="Unrealized gains" value={`${totalPnL >= 0 ? '+' : '−'}${formatMoney(Math.abs(totalPnL), baseCurrency)}`} hint={`${((totalPnL / (totalCost || 1)) * 100).toFixed(2)}%`} />
-        <Metric label="Daily change" value={`${dailyPct >= 0 ? '+' : '−'}${Math.abs(dailyPct).toFixed(2)}%`} hint="since prev day" />
+        <Metric label="Total value" value={formatMoney(totalCurrent, baseCurrency)} />
+        <Metric label="Book cost" value={formatMoney(totalCost, baseCurrency)} />
+        <Metric label="Unrealized gains" value={`${totalPnL >= 0 ? '+' : '−'}${formatMoney(Math.abs(totalPnL), baseCurrency)}`} />
+        <Metric label="Daily change" value={`${dailyPct >= 0 ? '+' : '−'}${Math.abs(dailyPct).toFixed(2)}%`} />
       </div>
       <div className="mt-4">
         <div className="flex items-center justify-between mb-2">
@@ -299,7 +300,7 @@ export default function InvestmentsPage() {
           const gain = current - cost
           const pct = cost > 0 ? (gain / cost) * 100 : 0
           return (
-            <Metric key={h.id} label={`${h.symbol} · ${((h as any).currency ?? '')}`} value={formatMoney(current, baseCurrency)} hint={`${gain >= 0 ? '+' : '−'}${formatMoney(Math.abs(gain), baseCurrency)} · ${pct.toFixed(2)}%`} />
+            <Metric key={h.id} label={`${h.symbol} · ${((h as any).currency ?? '')}`} value={formatMoney(current, baseCurrency)} />
           )
         })}
       </div>

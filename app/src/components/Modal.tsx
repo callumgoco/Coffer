@@ -1,4 +1,5 @@
-import { ReactNode, useEffect } from 'react'
+import type { ReactNode } from 'react'
+import { useEffect } from 'react'
 
 export function Modal({ open, onClose, title, children, footer }: { open: boolean; onClose: () => void; title?: string; children: ReactNode; footer?: ReactNode }) {
   useEffect(() => {
