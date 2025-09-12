@@ -237,8 +237,7 @@ export default function InvestmentsPage() {
               const syms = Array.from(new Set((data ?? []).map(h => h.symbol)))
               console.debug('[Investments] Refresh prices for symbols', syms)
               const useFmp = Boolean(import.meta.env.VITE_FMP_API_KEY)
-              const timeout = (ms: number) => new Promise((_, reject)=>setTimeout(()=>reject(new Error('timeout')), ms))
-              await Promise.all(syms.map(async (s) => {
+              for (const s of syms) {
                 try {
                   let q = useFmp ? await fmp.getQuote(s) : await alphaVantage.getQuote(s)
                   if (!(Number.isFinite(q.price) && q.price > 0)) {
@@ -247,15 +246,12 @@ export default function InvestmentsPage() {
                   }
                   console.debug('[Investments] Quote result', s, q)
                   if (Number.isFinite(q.price) && q.price > 0) {
-                    await Promise.race([
-                      (service.updateHoldingPrice?.(s, q.price) as any),
-                      timeout(8000),
-                    ])
+                    await (service.updateHoldingPrice?.(s, q.price) as any)
                   }
                 } catch (e) {
                   console.error('[Investments] Failed to refresh price for', s, e)
                 }
-              }))
+              }
               queryClient.invalidateQueries({ queryKey: ['holdings'] })
             }}>Refresh prices</button>
           </div>
