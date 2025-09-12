@@ -107,7 +107,7 @@ export default function InvestmentsPage() {
   // Load and aggregate historical series for the portfolio (prefer persisted snapshots)
   useEffect(() => {
     // If snapshots exist, filter to timeframe and convert currency if needed
-    if (snapshots && snapshots.length > 0) {
+    if (Array.isArray(snapshots) && snapshots.length > 0) {
       const daysMap: Record<Timeframe, number> = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365 }
       const rangeDays = daysMap[timeframe]
       const cutoff = new Date()
@@ -120,7 +120,7 @@ export default function InvestmentsPage() {
       setPortfolioSeries(filtered)
       return
     }
-    const holdings = ((data ?? []) as Array<any>)
+    const holdings = Array.isArray(data) ? (data as Array<any>) : []
     if (!holdings.length) { setPortfolioSeries([]); return }
     const useFmp = Boolean(import.meta.env.VITE_FMP_API_KEY)
     const provider = useFmp ? fmp : alphaVantage

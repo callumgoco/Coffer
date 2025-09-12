@@ -1,6 +1,6 @@
 import Card from '../components/Card'
 import PageHeader from '../components/PageHeader'
-import { useBudgets, useIncomes } from '../hooks/useData'
+import { useBudgets } from '../hooks/useData'
 import CSVImport from '../components/CSVImport'
 import { useQueryClient } from '@tanstack/react-query'
 import { service } from '../services/adapters'
