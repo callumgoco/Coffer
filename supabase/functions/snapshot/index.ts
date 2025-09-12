@@ -56,13 +56,23 @@ serve(async (req) => {
     const today = new Date().toISOString().slice(0, 10)
 
     // Optional: per-user base currency from profiles table
-    const { data: users, error: usersErr } = await supabase
-      .from('holdings')
-      .select('user_id')
-      .neq('user_id', null)
-      .order('user_id', { ascending: true })
-    if (usersErr) throw usersErr
-    const userIds = Array.from(new Set((users ?? []).map((u: any) => u.user_id))).filter(Boolean)
+    const isUuid = (v: unknown) => typeof v === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(v)
+    let userIds: string[] = []
+    // Prefer profiles (always UUID ids)
+    try {
+      const { data: profiles } = await supabase.from('profiles').select('id')
+      userIds = Array.from(new Set((profiles ?? []).map((p: any) => p.id))).filter(isUuid)
+    } catch (_) {}
+    // Fallback to holdings (some projects might not have profiles yet)
+    if (userIds.length === 0) {
+      const { data: users, error: usersErr } = await supabase
+        .from('holdings')
+        .select('user_id')
+        .not('user_id', 'is', null)
+        .order('user_id', { ascending: true })
+      if (usersErr) throw usersErr
+      userIds = Array.from(new Set((users ?? []).map((u: any) => u.user_id))).filter(isUuid)
+    }
 
     let ratesCache: Record<string, Rates | null> = {}
 
@@ -105,9 +115,16 @@ serve(async (req) => {
       const unrealized = totalCurrent - totalCost
 
       // Upsert snapshot for today (idempotent per user_id+date)
-      const id = crypto.randomUUID()
-      const payload = { id, user_id: uid, date: today, value: totalCurrent, currency: baseCurrency, book_cost: totalCost, unrealized, pnl: unrealized }
-      const { error: upErr } = await supabase.from('portfolio_snapshots').upsert(payload, { onConflict: 'user_id,date' })
+      const { error: upErr } = await supabase.from('portfolio_snapshots').upsert({
+        // id omitted so DB can generate; rely on unique (user_id,date)
+        user_id: uid,
+        date: today,
+        value: totalCurrent,
+        currency: baseCurrency,
+        book_cost: totalCost,
+        unrealized,
+        pnl: unrealized,
+      }, { onConflict: 'user_id,date' })
       if (!upErr) written++
 
       // Retention: keep last 24 months
