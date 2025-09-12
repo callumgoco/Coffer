@@ -21,7 +21,13 @@ export default function SettingsPage() {
       setDeleting(true)
       setError(null)
       if (!supabase) throw new Error('Supabase not configured')
-      const { error } = await supabase.functions.invoke('delete-account', { body: { confirm: true } })
+      const { data: sessionRes } = await supabase.auth.getSession()
+      const accessToken = sessionRes?.session?.access_token
+      if (!accessToken) throw new Error('Not signed in')
+      const { error } = await supabase.functions.invoke('delete-account', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: { confirm: true },
+      })
       if (error) throw new Error(error.message)
       await signOut()
       navigate('/')
