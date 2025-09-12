@@ -89,10 +89,16 @@ export default function Overview() {
         <div className="mt-4 h-40">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={spendSeries}>
+              <defs>
+                <linearGradient id="overviewSpendGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="rgb(var(--accent))" stopOpacity="0.35" />
+                  <stop offset="100%" stopColor="rgb(var(--accent))" stopOpacity="0" />
+                </linearGradient>
+              </defs>
               <XAxis dataKey="date" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} hide={spendSeries.length > 30} />
               <YAxis stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} hide />
               <Tooltip contentStyle={{ background: 'rgb(var(--card))', border: '1px solid rgb(var(--border))' }} />
-              <Area type="monotone" dataKey="value" stroke="rgb(var(--accent))" fill="rgb(var(--accent))" fillOpacity={0.2} />
+              <Area type="monotone" dataKey="value" stroke="rgb(var(--accent))" fill="url(#overviewSpendGradient)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         </div>

@@ -7,7 +7,7 @@ import Modal from '../components/Modal'
 import { fmp, alphaVantage } from '../services/marketData/provider'
 import { queryClient } from '../services/queryClient'
 import { service } from '../services/adapters'
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
 import EmptyState from '../components/EmptyState'
 import { PencilIcon } from '../components/icons'
 import Skeleton from '../components/Skeleton'
@@ -346,13 +346,19 @@ export default function InvestmentsPage() {
             <div className="h-full flex items-center justify-center text-sm text-subtle">No chart data</div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={seriesMode === 'UNREALIZED' ? portfolioSeries : portfolioSeriesTotal}>
+              <AreaChart data={seriesMode === 'UNREALIZED' ? portfolioSeries : portfolioSeriesTotal}>
+                <defs>
+                  <linearGradient id="portfolioGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="rgb(var(--accent))" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="rgb(var(--accent))" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid stroke="rgb(var(--muted))" strokeOpacity={0.2} />
                 <XAxis dataKey="date" stroke="currentColor" tick={{ fill: 'currentColor' }} tickFormatter={(d:any)=>String(d).slice(5)} minTickGap={24} />
                 <YAxis stroke="currentColor" tick={{ fill: 'currentColor' }} tickFormatter={(v:any)=>formatMoney(Number(v)||0, baseCurrency)} width={80} />
                 <Tooltip contentStyle={{ background: 'rgb(var(--card))', border: '1px solid rgb(var(--border))' }} formatter={(v:any)=>formatMoney(Number(v)||0, baseCurrency)} labelFormatter={(d:any)=>new Date(d).toLocaleDateString()} />
-                <Line type="monotone" dataKey="value" stroke="rgb(var(--accent))" dot={false} strokeWidth={2} />
-              </LineChart>
+                <Area type="monotone" dataKey="value" stroke="rgb(var(--accent))" fill="url(#portfolioGradient)" strokeWidth={2} dot={false} />
+              </AreaChart>
             </ResponsiveContainer>
           )}
         </div>

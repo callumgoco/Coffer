@@ -274,10 +274,16 @@ export default function TransactionsPage() {
         <div className="mt-4 h-48">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={spendSeries}>
+              <defs>
+                <linearGradient id="transactionsSpendGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="rgb(var(--accent))" stopOpacity="0.35" />
+                  <stop offset="100%" stopColor="rgb(var(--accent))" stopOpacity="0" />
+                </linearGradient>
+              </defs>
               <XAxis dataKey="date" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} hide={spendSeries.length > 30} />
               <YAxis stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} hide />
               <Tooltip contentStyle={{ background: 'rgb(var(--card))', border: '1px solid rgb(var(--border))' }} formatter={(v:any)=>formatMoney(Number(v)||0, baseCurrency)} />
-              <Area type="monotone" dataKey="value" stroke="rgb(var(--accent))" fill="rgb(var(--accent))" fillOpacity={0.2} />
+              <Area type="monotone" dataKey="value" stroke="rgb(var(--accent))" fill="url(#transactionsSpendGradient)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
