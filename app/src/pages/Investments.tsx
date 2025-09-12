@@ -54,7 +54,7 @@ export default function InvestmentsPage() {
   }
 
   // Portfolio chart state
-  type Timeframe = '1M' | '3M' | '6M' | '1Y'
+  type Timeframe = '1M' | '3M' | '6M' | '1Y' | 'ALL'
   type Resolution = 'D' | 'W' | 'M'
   const [timeframe, setTimeframe] = useState<Timeframe>('3M')
   const [resolution, setResolution] = useState<Resolution>('D')
@@ -108,8 +108,15 @@ export default function InvestmentsPage() {
   useEffect(() => {
     // If snapshots exist, filter to timeframe and convert currency if needed
     if (Array.isArray(snapshots) && snapshots.length > 0) {
-      const daysMap: Record<Timeframe, number> = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365 }
-      const rangeDays = daysMap[timeframe]
+      if (timeframe === 'ALL') {
+        const all = snapshots
+          .map(s => ({ date: s.date, value: convertAmount(s.value, (s as any).currency ?? baseCurrency, baseCurrency, rates) }))
+          .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+        setPortfolioSeries(all)
+        return
+      }
+      const daysMap: Record<Exclude<Timeframe, 'ALL'>, number> = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365 }
+      const rangeDays = daysMap[timeframe as Exclude<Timeframe, 'ALL'>]
       const cutoff = new Date()
       cutoff.setDate(cutoff.getDate() - rangeDays - 2)
       const cutoffStr = cutoff.toISOString().slice(0, 10)
@@ -124,8 +131,8 @@ export default function InvestmentsPage() {
     if (!holdings.length) { setPortfolioSeries([]); return }
     const useFmp = Boolean(import.meta.env.VITE_FMP_API_KEY)
     const provider = useFmp ? fmp : alphaVantage
-    const daysMap: Record<Timeframe, number> = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365 }
-    const rangeDays = daysMap[timeframe]
+    const daysMap: Record<Exclude<Timeframe, 'ALL'>, number> = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365 }
+    const rangeDays = timeframe === 'ALL' ? 365 : daysMap[timeframe as Exclude<Timeframe, 'ALL'>]
     let cancelled = false
     async function load() {
       setSeriesLoading(true)
@@ -138,10 +145,21 @@ export default function InvestmentsPage() {
         // Build union date set
         const dateSet = new Set<string>()
         for (const arr of bySymbol.values()) for (const p of arr) dateSet.add(p.date)
-        // Ensure dates are within range and sorted
-        const dates = Array.from(dateSet)
+        // Ensure dates are within range and sorted. If none found, synthesize daily dates.
+        let dates = Array.from(dateSet)
           .filter(Boolean)
           .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+        if (dates.length === 0) {
+          const out: string[] = []
+          const start = new Date()
+          start.setDate(start.getDate() - rangeDays)
+          for (let i = 0; i <= rangeDays; i++) {
+            const d = new Date(start)
+            d.setDate(start.getDate() + i)
+            out.push(d.toISOString().slice(0, 10))
+          }
+          dates = out
+        }
 
         // Prepare pointers for carry-forward close
         const pointers: Record<string, number> = {}
@@ -264,7 +282,7 @@ export default function InvestmentsPage() {
           <h2 className="text-lg font-medium">Portfolio value</h2>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 flex-nowrap">
-              {(['1M','3M','6M','1Y'] as any).map((tf: '1M'|'3M'|'6M'|'1Y') => (
+              {(['1M','3M','6M','1Y','ALL'] as any).map((tf: '1M'|'3M'|'6M'|'1Y'|'ALL') => (
                 <button key={tf} className={`btn btn-sm ${timeframe === tf ? 'btn-primary' : ''}`} onClick={() => setTimeframe(tf)}>{tf}</button>
               ))}
             </div>
