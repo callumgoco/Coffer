@@ -69,7 +69,14 @@ serve(async (req) => {
     try {
       try { await supabaseAdmin.auth.admin.invalidateAllRefreshTokens(userId) } catch (_) {}
       const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(userId)
-      if (delErr) throw delErr
+      if (delErr) {
+        const msg = String((delErr as any)?.message ?? delErr ?? '')
+        if (/not\s*found|no\s*user/i.test(msg)) {
+          // Idempotent: if user is already gone, treat as success
+        } else {
+          throw delErr
+        }
+      }
     } catch (e) {
       return new Response(JSON.stringify({ error: 'Failed to delete auth user', detail: String((e as any)?.message ?? e) }), { status: 500, headers: corsHeaders })
     }
