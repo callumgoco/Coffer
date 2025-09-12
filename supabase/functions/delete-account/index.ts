@@ -13,6 +13,7 @@ const USER_TABLES: Table[] = [
   { name: 'watchlist', userColumn: 'user_id' },
   { name: 'incomes', userColumn: 'user_id' },
   { name: 'portfolio_snapshots', userColumn: 'user_id' },
+  { name: 'accounts', userColumn: 'user_id' },
 ]
 
 serve(async (req) => {
