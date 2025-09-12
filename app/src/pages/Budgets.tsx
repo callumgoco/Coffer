@@ -152,47 +152,54 @@ export default function BudgetsPage() {
           ) : null}
         </div>
       </>} />
+      {/* Metrics */}
       <Card className="mt-4">
-      <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Metric label="Total limit" value={`${totals.symbol}${totals.totalLimit.toFixed(2)}`} />
-            <Metric label="Total spent" value={`${totals.symbol}${totals.totalSpent.toFixed(2)}`} />
-            <Metric label="Remaining" value={`${totals.symbol}${totals.remaining.toFixed(2)}`} />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        {isLoading ? (
-          <>
-            <Skeleton className="h-5 w-full rounded" />
-            <Skeleton className="h-5 w-5/6 rounded" />
-            <Skeleton className="h-5 w-2/3 rounded" />
-          </>
-        ) : (data ?? []).length === 0 ? (
-          <EmptyState title="No budgets yet" hint="Import a CSV or add some." />
-        ) : (data ?? []).map((b) => {
-          const pct = Math.min(100, Math.round((b.spent / b.limit) * 100))
-          return (
-            <div key={b.id} className="card p-4 flex items-center gap-4">
-              <div className="relative">
-                <ProgressRing value={pct} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="font-medium truncate">{b.category}</div>
-                  <button className="btn btn-xs btn-outline" aria-label="Edit budget" title="Edit" onClick={() => openEditBudget(b)}>
-                    <PencilIcon />
-                  </button>
-                </div>
-                <div className="mt-1 text-sm text-subtler truncate">
-                  {currencySymbol(b.currency)}{b.spent.toFixed(2)} / {currencySymbol(b.currency)}{b.limit.toFixed(2)} ({pct}%)
-                </div>
-              </div>
-            </div>
-          )
-        })}
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Metric label="Total limit" value={`${totals.symbol}${totals.totalLimit.toFixed(2)}`} />
+          <Metric label="Total spent" value={`${totals.symbol}${totals.totalSpent.toFixed(2)}`} />
+          <Metric label="Remaining" value={`${totals.symbol}${totals.remaining.toFixed(2)}`} />
         </div>
-        <div className="h-80">
+      </Card>
+
+      {/* Budgets list */}
+      <Card className="mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {isLoading ? (
+            <>
+              <Skeleton className="h-5 w-full rounded" />
+              <Skeleton className="h-5 w-5/6 rounded" />
+              <Skeleton className="h-5 w-2/3 rounded" />
+            </>
+          ) : (data ?? []).length === 0 ? (
+            <EmptyState title="No budgets yet" hint="Import a CSV or add some." />
+          ) : (data ?? []).map((b) => {
+            const pct = Math.min(100, Math.round((b.spent / b.limit) * 100))
+            return (
+              <div key={b.id} className="card p-4 flex items-center gap-4">
+                <div className="relative">
+                  <ProgressRing value={pct} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-medium truncate">{b.category}</div>
+                    <button className="btn btn-xs btn-outline" aria-label="Edit budget" title="Edit" onClick={() => openEditBudget(b)}>
+                      <PencilIcon />
+                    </button>
+                  </div>
+                  <div className="mt-1 text-sm text-subtler truncate">
+                    {currencySymbol(b.currency)}{b.spent.toFixed(2)} / {currencySymbol(b.currency)}{b.limit.toFixed(2)} ({pct}%)
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </Card>
+
+      {/* Total allocation pie */}
+      <Card className="mt-4">
+        <h2 className="text-lg font-medium">Overall allocation</h2>
+        <div className="h-80 mt-2">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -216,8 +223,7 @@ export default function BudgetsPage() {
             </PieChart>
           </ResponsiveContainer>
         </div>
-      </div>
-    </Card>
+      </Card>
 
     <Modal open={editOpen} onClose={() => setEditOpen(false)} title={draft?.id ? 'Edit budget' : 'New budget'}>
       {draft ? (

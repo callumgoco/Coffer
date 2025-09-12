@@ -8,12 +8,20 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import EmptyState from '../components/EmptyState'
 import Skeleton from '../components/Skeleton'
 import Modal from '../components/Modal'
+import { Metric } from '../components/Metric'
+import { useCurrencyStore } from '../stores/currency'
+import { useRates, convertAmount } from '../services/currency/rates'
+import { formatMoney } from '../utils/money'
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts'
 
 export default function TransactionsPage() {
   const { data: txs, isLoading } = useTransactions()
   const { data: accounts } = useAccounts()
   const { data: budgets } = useBudgets()
   const accMap = new Map((accounts ?? []).map((a) => [a.id, a.name]))
+  const accCurrency = new Map((accounts ?? []).map((a) => [a.id, a.currency]))
+  const { baseCurrency } = useCurrencyStore()
+  const { data: rates } = useRates(baseCurrency)
 
   const qc = useQueryClient()
   const [q, setQ] = useState('')
@@ -162,6 +170,35 @@ export default function TransactionsPage() {
     return list
   }, [txs, q, sortBy, sortDir, category, accMap])
 
+  const metrics = useMemo(() => {
+    const now = new Date()
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
+    let monthOut = 0
+    let monthIn = 0
+    ;(txs ?? []).forEach(t => {
+      const cur = (t as any).currency ?? accCurrency.get(t.accountId) ?? baseCurrency
+      const amountBase = convertAmount(Math.abs(t.amount), cur as any, baseCurrency, rates)
+      if ((t.date ?? '').startsWith(monthKey)) {
+        if (t.amount < 0) monthOut += amountBase
+        else monthIn += amountBase
+      }
+    })
+    const count = (txs ?? []).length
+    const avgOut = monthOut > 0 ? (monthOut / Math.max(1, (txs ?? []).filter(t => (t.date ?? '').startsWith(monthKey) && t.amount < 0).length)) : 0
+    return { monthOut, monthIn, net: monthIn - monthOut, count, avgOut }
+  }, [txs, baseCurrency, rates, accCurrency])
+
+  const spendSeries = useMemo(() => {
+    const map = new Map<string, number>()
+    ;(txs ?? []).forEach(t => {
+      if (t.amount >= 0) return
+      const cur = (t as any).currency ?? accCurrency.get(t.accountId) ?? baseCurrency
+      const valBase = convertAmount(-t.amount, cur as any, baseCurrency, rates)
+      map.set(t.date, (map.get(t.date) ?? 0) + valBase)
+    })
+    return Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0])).map(([date, value])=>({ date, value }))
+  }, [txs, baseCurrency, rates, accCurrency])
+
   return (
     <>
       <PageHeader title="Transactions" actions={<>
@@ -218,6 +255,35 @@ export default function TransactionsPage() {
           ) : null}
         </div>
       </>} />
+      {/* Metrics */}
+      <Card className="mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <Metric label="This month − spent" value={formatMoney(metrics.monthOut, baseCurrency)} />
+          <Metric label="This month − income" value={formatMoney(metrics.monthIn, baseCurrency)} />
+          <Metric label="This month − net" value={formatMoney(metrics.net, baseCurrency)} />
+          <Metric label="Transactions" value={String(metrics.count)} sub={metrics.avgOut ? `Avg spend ${formatMoney(metrics.avgOut, baseCurrency)}` : undefined} />
+        </div>
+      </Card>
+
+      {/* Spending trend */}
+      <Card className="mt-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">Spending trend</h2>
+          <span className="badge text-subtler">mock data</span>
+        </div>
+        <div className="mt-4 h-48">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={spendSeries}>
+              <XAxis dataKey="date" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} hide={spendSeries.length > 30} />
+              <YAxis stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} hide />
+              <Tooltip contentStyle={{ background: 'rgb(var(--card))', border: '1px solid rgb(var(--border))' }} formatter={(v:any)=>formatMoney(Number(v)||0, baseCurrency)} />
+              <Area type="monotone" dataKey="value" stroke="rgb(var(--accent))" fill="rgb(var(--accent))" fillOpacity={0.2} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      {/* Table */}
       <Card className="mt-4">
       <div className="mt-4">
         {isLoading ? (

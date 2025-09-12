@@ -248,14 +248,18 @@ export default function InvestmentsPage() {
           {toast.message}
         </div>
       ) : null}
+      {/* Metrics */}
       <Card className="mt-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <Metric label="Total value" value={formatMoney(totalCurrent, baseCurrency)} />
-        <Metric label="Book cost" value={formatMoney(totalCost, baseCurrency)} />
-        <Metric label="Unrealized gains" value={`${totalPnL >= 0 ? '+' : '−'}${formatMoney(Math.abs(totalPnL), baseCurrency)}`} />
-        <Metric label="Daily change" value={`${dailyPct >= 0 ? '+' : '−'}${Math.abs(dailyPct).toFixed(2)}%`} />
-      </div>
-      <div className="mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <Metric label="Total value" value={formatMoney(totalCurrent, baseCurrency)} />
+          <Metric label="Book cost" value={formatMoney(totalCost, baseCurrency)} />
+          <Metric label="Unrealized gains" value={`${totalPnL >= 0 ? '+' : '−'}${formatMoney(Math.abs(totalPnL), baseCurrency)}`} />
+          <Metric label="Daily change" value={`${dailyPct >= 0 ? '+' : '−'}${Math.abs(dailyPct).toFixed(2)}%`} />
+        </div>
+      </Card>
+
+      {/* Portfolio chart */}
+      <Card className="mt-4">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-medium">Portfolio value</h2>
           <div className="flex items-center gap-2">
@@ -290,17 +294,24 @@ export default function InvestmentsPage() {
             </ResponsiveContainer>
           )}
         </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-        {(data ?? []).map(h => {
-          const currentNative = (((h as any).lastPrice ?? h.averageCost) * h.quantity)
-          const current = convertAmount(currentNative, (h as any).currency ?? baseCurrency, baseCurrency, rates)
-          return (
-            <Metric key={h.id} label={`${h.symbol} · ${((h as any).currency ?? '')}`} value={formatMoney(current, baseCurrency)} />
-          )
-        })}
-      </div>
-      <div className="mt-4">
+      </Card>
+
+      {/* Holdings snapshot */}
+      <Card className="mt-4">
+        <h2 className="text-lg font-medium">Holdings snapshot</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
+          {(data ?? []).map(h => {
+            const currentNative = (((h as any).lastPrice ?? h.averageCost) * h.quantity)
+            const current = convertAmount(currentNative, (h as any).currency ?? baseCurrency, baseCurrency, rates)
+            return (
+              <Metric key={h.id} label={`${h.symbol} · ${((h as any).currency ?? '')}`} value={formatMoney(current, baseCurrency)} />
+            )
+          })}
+        </div>
+      </Card>
+
+      {/* Holdings table */}
+      <Card className="mt-4">
         {isLoading ? (
           <div className="space-y-2">
             <div className="hidden md:grid md:grid-cols-8 items-center border-b border-border pb-2 text-xs text-subtler gap-2">
@@ -371,10 +382,9 @@ export default function InvestmentsPage() {
             ))}
           </>
         )}
-      </div>
+      </Card>
 
       {/* Watchlist removed per new flow */}
-    </Card>
     <Modal open={addOpen} onClose={()=>setAddOpen(false)} title="Add holding" footer={(
       <>
         <button className="btn" onClick={()=>setAddOpen(false)}>Cancel</button>

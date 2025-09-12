@@ -11,6 +11,7 @@ import { useState, useMemo } from 'react'
 import { useCurrencyStore } from '../stores/currency'
 import { useRates, convertAmount } from '../services/currency/rates'
 import { formatMoney } from '../utils/money'
+import { Metric } from '../components/Metric'
 
 export default function AssetsPage() {
   const { data, isLoading } = useAssets()
@@ -80,7 +81,17 @@ export default function AssetsPage() {
             await qc.invalidateQueries({ queryKey: ['assets'] })
           }} />
       </>} />
+      {/* Metrics */}
       <Card className="mt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Metric label="Total assets" value={formatMoney(total, baseCurrency)} />
+        <Metric label="Count" value={String((data ?? []).length)} />
+        <Metric label="Avg value" value={formatMoney((data ?? []).length ? total / (data ?? []).length : 0, baseCurrency)} />
+      </div>
+    </Card>
+
+    {/* List */}
+    <Card className="mt-4">
       <div className="text-subtler text-sm">Total {formatMoney(total, baseCurrency)}</div>
       <div className="mt-4 space-y-2">
         {isLoading ? (
