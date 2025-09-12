@@ -33,7 +33,7 @@ export default function Overview() {
     const useFmp = Boolean(import.meta.env.VITE_FMP_API_KEY)
     for (const s of syms) {
       const q = useFmp ? await fmp.getQuote(s) : await new AlphaVantageProvider().getQuote(s)
-      if (q.price) await service.updateHoldingPrice?.(s, q.price)
+      if (Number.isFinite(q.price) && q.price > 0) await service.updateHoldingPrice?.(s, q.price)
     }
   }
 

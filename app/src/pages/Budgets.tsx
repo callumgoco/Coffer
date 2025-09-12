@@ -15,7 +15,7 @@ import { PencilIcon } from '../components/icons'
 
 export default function BudgetsPage() {
   const { data, isLoading } = useBudgets()
-  const { data: incomes } = useIncomes()
+  // const { data: incomes } = useIncomes()
   const qc = useQueryClient()
   const [editOpen, setEditOpen] = useState(false)
   const [draft, setDraft] = useState<{ id?: string; category: string; limit: number; currency?: 'GBP'|'USD'|'EUR'|'CAD' } | null>(null)
@@ -205,7 +205,7 @@ export default function BudgetsPage() {
                 outerRadius={110}
                 paddingAngle={2}
               >
-                {pieData.map((entry, index) => (
+                {pieData.map((_entry, index) => (
                   <Cell key={`cell-${index}`} fill={index === 0 ? 'rgb(var(--accent))' : '#9ca3af'} />
                 ))}
               </Pie>

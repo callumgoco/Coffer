@@ -5,7 +5,7 @@ let cachedUserId: string | null = null
 
 // Keep cache in sync with auth changes
 try {
-  supabase.auth.onAuthStateChange((_event, session) => {
+  if (supabase) supabase.auth.onAuthStateChange((_event, session) => {
     cachedUserId = session?.user?.id ?? null
   })
 } catch {}
@@ -20,7 +20,7 @@ async function getUserId(): Promise<string | null> {
   const timeout = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error('getUser timeout')), ms))
   try {
     const sessionRes: any = await Promise.race([
-      supabase.auth.getSession(),
+      supabase ? supabase.auth.getSession() : Promise.resolve({ data: { session: null } }),
       timeout(5000),
     ])
     const uid = sessionRes?.data?.session?.user?.id ?? null
@@ -34,7 +34,7 @@ async function getUserId(): Promise<string | null> {
   }
   try {
     const { data, error } = await Promise.race([
-      supabase.auth.getUser(),
+      supabase ? supabase.auth.getUser() : Promise.resolve({ data: { user: null } }),
       timeout(5000),
     ]) as any
     console.debug('[Supabase] getUserId result', { hasUser: !!data?.user, error: error ? (error as any).message : null })

@@ -21,7 +21,7 @@ export default function InvestmentsPage() {
   const { baseCurrency } = useCurrencyStore()
   const { data: rates } = useRates(baseCurrency)
   // watchlist UI removed; keep placeholder to avoid breaking layout
-  const { data: watchlist } = { data: [] as any }
+  // const { data: watchlist } = { data: [] as any }
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Array<{ symbol: string; name: string; region: string; currency?: string }>>([])
   const [searching, setSearching] = useState(false)
@@ -61,9 +61,9 @@ export default function InvestmentsPage() {
   const [seriesLoading, setSeriesLoading] = useState(false)
   const [portfolioSeries, setPortfolioSeries] = useState<Array<{ date: string; value: number }>>([])
 
-  function onSearchChange(value: string) {
-    setQuery(value)
-  }
+  // function onSearchChange(value: string) {
+  //   setQuery(value)
+  // }
 
   async function runSearch() {
     const trimmed = query.trim()
@@ -85,12 +85,12 @@ export default function InvestmentsPage() {
     setSearching(false)
   }
 
-  async function onAdd(symbol: string) {
-    await service.addToWatchlist?.(symbol)
-    queryClient.invalidateQueries({ queryKey: ['watchlist'] })
-    setQuery('')
-    setResults([])
-  }
+  // async function onAdd(symbol: string) {
+  //   await service.addToWatchlist?.(symbol)
+  //   queryClient.invalidateQueries({ queryKey: ['watchlist'] })
+  //   setQuery('')
+  //   setResults([])
+  // }
 
   // Compute overview metrics
   const { totalCost, totalCurrent, totalPnL, dailyPct } = useMemo(() => {
@@ -120,7 +120,7 @@ export default function InvestmentsPage() {
       setPortfolioSeries(filtered)
       return
     }
-    const holdings = (data ?? [])
+    const holdings = ((data ?? []) as Array<any>)
     if (!holdings.length) { setPortfolioSeries([]); return }
     const useFmp = Boolean(import.meta.env.VITE_FMP_API_KEY)
     const provider = useFmp ? fmp : alphaVantage

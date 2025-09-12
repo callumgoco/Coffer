@@ -15,7 +15,7 @@ export function CSVImport({ onRows }: { onRows: (rows: Row[]) => void }) {
     const file = e.target.files?.[0]
     if (!file) return
     setError(null)
-    Papa.parse<Row>(file, {
+    Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
       complete: (res: any) => {
