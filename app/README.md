@@ -67,3 +67,42 @@ VITE_MARKETSTACK_API_KEY=
 ## Supabase (later)
 
 Settings will include a Developer toggle to enable Supabase (beta). When requested, we'll propose a normalized schema, then generate migrations and RLS (no SQL yet in this repo).
+
+## Server-side portfolio snapshots (Supabase)
+
+1. Create table and RLS
+
+Run in Supabase SQL editor or with CLI:
+
+```sql
+-- file: supabase/migrations/20250912_portfolio_snapshots.sql
+```
+
+2. Edge Function
+
+Deploy the function:
+
+```bash
+supabase functions deploy snapshot --project-ref YOUR_PROJECT_REF
+```
+
+Set env vars for the function (Service Role required for cron):
+
+- SUPABASE_URL
+- SUPABASE_SERVICE_ROLE_KEY
+- BASE_CURRENCY_DEFAULT (optional, e.g. GBP)
+- FREECURRENCY_API_KEY (optional, improves FX conversion)
+
+```bash
+supabase functions secrets set SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... BASE_CURRENCY_DEFAULT=GBP FREECURRENCY_API_KEY=... --project-ref YOUR_PROJECT_REF --env prod
+```
+
+3. Schedule daily run
+
+If using Supabase Scheduled Triggers:
+
+```bash
+supabase cron schedule daily-snapshot "0 2 * * *" --project-ref YOUR_PROJECT_REF --invoke snapshot
+```
+
+Alternatively, use an external cron to POST the function URL.
