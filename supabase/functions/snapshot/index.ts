@@ -44,6 +44,9 @@ async function fetchRates(base: string, apiKey?: string): Promise<Rates | null> 
 
 serve(async (req) => {
   try {
+    const url = new URL(req.url)
+    const requestedUser = url.searchParams.get('user') || undefined
+    const debug = url.searchParams.get('debug') === '1'
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -58,11 +61,16 @@ serve(async (req) => {
     // Optional: per-user base currency from profiles table
     const isUuid = (v: unknown) => typeof v === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(v)
     let userIds: string[] = []
+    if (requestedUser && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(requestedUser)) {
+      userIds = [requestedUser]
+    }
     // Prefer profiles (always UUID ids)
-    try {
-      const { data: profiles } = await supabase.from('profiles').select('id')
-      userIds = Array.from(new Set((profiles ?? []).map((p: any) => p.id))).filter(isUuid)
-    } catch (_) {}
+    if (userIds.length === 0) {
+      try {
+        const { data: profiles } = await supabase.from('profiles').select('id')
+        userIds = Array.from(new Set((profiles ?? []).map((p: any) => p.id))).filter(isUuid)
+      } catch (_) {}
+    }
     // Fallback to holdings (some projects might not have profiles yet)
     if (userIds.length === 0) {
       const { data: users, error: usersErr } = await supabase
@@ -77,6 +85,7 @@ serve(async (req) => {
     let ratesCache: Record<string, Rates | null> = {}
 
     let written = 0
+    const results: Array<{ uid: string; holdings: number; wrote: boolean; totalCurrent?: number; totalCost?: number; unrealized?: number }> = []
     for (const uid of userIds) {
       // Resolve base currency per user (fallback to DEFAULT_BASE)
       let baseCurrency = DEFAULT_BASE
@@ -93,7 +102,7 @@ serve(async (req) => {
       if (holdErr) continue
 
       const list = (holdings ?? []) as Holding[]
-      if (list.length === 0) continue
+      if (list.length === 0) { results.push({ uid, holdings: 0, wrote: false }); continue }
 
       // Load FX rates once per base currency
       if (!(baseCurrency in ratesCache)) {
@@ -125,7 +134,7 @@ serve(async (req) => {
         unrealized,
         pnl: unrealized,
       }, { onConflict: 'user_id,date' })
-      if (!upErr) written++
+      if (!upErr) { written++; results.push({ uid, holdings: list.length, wrote: true, totalCurrent, totalCost, unrealized }) }
 
       // Retention: keep last 24 months
       const cutoff = new Date()
@@ -134,7 +143,8 @@ serve(async (req) => {
       await supabase.from('portfolio_snapshots').delete().lt('date', cutoffStr).eq('user_id', uid)
     }
 
-    return new Response(JSON.stringify({ ok: true, written }), { headers: { 'content-type': 'application/json' } })
+    const body = debug ? { ok: true, written, results } : { ok: true, written }
+    return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } })
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: String(e?.message ?? e) }), { status: 500 })
   }
