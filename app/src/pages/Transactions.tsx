@@ -29,7 +29,7 @@ export default function TransactionsPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [category, setCategory] = useState<string>('')
   const [editOpen, setEditOpen] = useState(false)
-  const [draft, setDraft] = useState<{ id?: string; date: string; merchant: string; category: string; amount: number; accountId: string; currency?: 'GBP'|'USD'|'EUR'; notes?: string } | null>(null)
+  const [draft, setDraft] = useState<{ id?: string; date: string; merchant: string; category: string; amount?: number; accountId: string; currency?: 'GBP'|'USD'|'EUR'; notes?: string } | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const [csvOpen, setCsvOpen] = useState(false)
   const csvRef = useRef<HTMLDivElement | null>(null)
@@ -75,7 +75,7 @@ export default function TransactionsPage() {
   }
 
   function openNew() {
-    setDraft({ date: new Date().toISOString().slice(0,10), merchant: '', category: '', amount: 0, accountId: accounts?.[0]?.id ?? '', currency: 'GBP', notes: '' })
+    setDraft({ date: new Date().toISOString().slice(0,10), merchant: '', category: '', amount: undefined, accountId: accounts?.[0]?.id ?? '', currency: 'GBP', notes: '' })
     setEditOpen(true)
   }
   function openEdit(t: any) {
@@ -351,7 +351,7 @@ export default function TransactionsPage() {
               <input className="input mt-1" type="date" value={draft.date} onChange={(e)=> setDraft({ ...draft, date: e.target.value })} required />
             </label>
             <label className="text-sm">Amount
-              <input className="input mt-1" type="number" step="0.01" value={draft.amount} onChange={(e)=> setDraft({ ...draft, amount: Number(e.target.value) })} required />
+              <input className="input mt-1" type="number" step="0.01" placeholder="0.00" value={draft.amount ?? ''} onChange={(e)=> setDraft({ ...draft, amount: e.target.value === '' ? undefined : Number(e.target.value) })} required />
             </label>
             <label className="text-sm col-span-2">Merchant
               <input className="input mt-1" value={draft.merchant} onChange={(e)=> setDraft({ ...draft, merchant: e.target.value })} />

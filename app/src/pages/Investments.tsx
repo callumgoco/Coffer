@@ -30,8 +30,8 @@ export default function InvestmentsPage() {
   const [selectedResult, setSelectedResult] = useState<{ symbol: string; name: string; region: string; currency?: string } | null>(null)
 
   const [addOpen, setAddOpen] = useState(false)
-  const [draftQty, setDraftQty] = useState<number>(0)
-  const [draftCost, setDraftCost] = useState<number>(0)
+  const [draftQty, setDraftQty] = useState<number | undefined>(undefined)
+  const [draftCost, setDraftCost] = useState<number | undefined>(undefined)
   const [draftCurrency, setDraftCurrency] = useState<string>('USD')
   const [addError, setAddError] = useState<string | null>(null)
   const [adding, setAdding] = useState<boolean>(false)
@@ -479,8 +479,8 @@ export default function InvestmentsPage() {
           setAddError(null)
           const symbol = query.trim().toUpperCase()
           if (!symbol) { setAddError('Symbol is required'); showToast('Symbol is required', 'error'); return }
-          if (draftQty <= 0) { setAddError('Quantity must be greater than 0'); showToast('Invalid quantity', 'error'); return }
-          if (draftCost < 0) { setAddError('Average cost cannot be negative'); showToast('Invalid average cost', 'error'); return }
+          if (draftQty == null || draftQty <= 0) { setAddError('Quantity must be greater than 0'); showToast('Invalid quantity', 'error'); return }
+          if (draftCost == null || draftCost < 0) { setAddError('Average cost cannot be negative'); showToast('Invalid average cost', 'error'); return }
           try {
             const id = (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
               ? crypto.randomUUID()
@@ -503,8 +503,8 @@ export default function InvestmentsPage() {
             setResults([])
             setQuery('')
             setSelectedResult(null)
-            setDraftQty(0)
-            setDraftCost(0)
+            setDraftQty(undefined)
+            setDraftCost(undefined)
             setDraftCurrency('USD')
             queryClient.invalidateQueries({ queryKey: ['holdings'] })
             showToast('Holding added', 'success')
@@ -553,11 +553,11 @@ export default function InvestmentsPage() {
         <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="block text-sm mb-1">Quantity</label>
-            <input type="number" className="input input-sm w-full" value={draftQty} onChange={e=>setDraftQty(Number(e.target.value))} />
+            <input type="number" className="input input-sm w-full" placeholder="0" value={draftQty ?? ''} onChange={e=>setDraftQty(e.target.value === '' ? undefined : Number(e.target.value))} />
           </div>
           <div>
             <label className="block text-sm mb-1">Average cost</label>
-            <input type="number" className="input input-sm w-full" value={draftCost} onChange={e=>setDraftCost(Number(e.target.value))} />
+            <input type="number" className="input input-sm w-full" placeholder="0.00" value={draftCost ?? ''} onChange={e=>setDraftCost(e.target.value === '' ? undefined : Number(e.target.value))} />
           </div>
           <div>
             <label className="block text-sm mb-1">Currency</label>

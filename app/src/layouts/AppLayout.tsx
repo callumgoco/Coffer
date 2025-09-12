@@ -80,7 +80,7 @@ export function AppLayout() {
         {/* Main */}
         <main className="flex-1 flex flex-col min-w-0">
           {/* Top bar */}
-          <header className="h-16 bg-header flex items-center justify-between gap-3 px-3 sticky top-3 z-40 mx-3 md:mx-4 rounded-xl shadow-lg">
+          <header className="h-16 bg-header flex items-center justify-between gap-3 px-4 md:px-6 sticky top-3 z-40 mx-3 md:mx-4 rounded-xl shadow-lg">
             <div className="flex items-center gap-2 flex-1 max-w-2xl">
               <button className="btn btn-ghost btn-sm md:hidden" aria-label="Open navigation" onClick={() => setMobileNavOpen(v => !v)}>Menu</button>
               <div className="relative flex-1 max-w-xl">

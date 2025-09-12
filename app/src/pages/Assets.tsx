@@ -17,7 +17,7 @@ export default function AssetsPage() {
   const { data, isLoading } = useAssets()
   const qc = useQueryClient()
   const [editOpen, setEditOpen] = useState(false)
-  const [draft, setDraft] = useState<{ id?: string; name: string; value: number; currency: 'GBP'|'USD'|'EUR'|'CAD'; pricePaid?: number; acquiredOn?: string; notes?: string; url?: string } | null>(null)
+  const [draft, setDraft] = useState<{ id?: string; name: string; value?: number; currency: 'GBP'|'USD'|'EUR'|'CAD'; pricePaid?: number; acquiredOn?: string; notes?: string; url?: string } | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('desc')
   const { baseCurrency } = useCurrencyStore()
@@ -37,11 +37,11 @@ export default function AssetsPage() {
   }, [data, sortDir, baseCurrency, rates])
 
   function openNew() {
-    setDraft({ name: '', value: 0, currency: 'GBP', pricePaid: 0, acquiredOn: '', notes: '', url: '' })
+    setDraft({ name: '', value: undefined, currency: 'GBP', pricePaid: undefined, acquiredOn: '', notes: '', url: '' })
     setEditOpen(true)
   }
   function openEdit(a: any) {
-    setDraft({ id: a.id, name: a.name, value: a.value, currency: (a as any).currency ?? 'GBP', pricePaid: (a as any).pricePaid ?? 0, acquiredOn: (a as any).acquiredOn ?? '', notes: (a as any).notes ?? '', url: (a as any).url ?? '' })
+    setDraft({ id: a.id, name: a.name, value: a.value, currency: (a as any).currency ?? 'GBP', pricePaid: (a as any).pricePaid ?? undefined, acquiredOn: (a as any).acquiredOn ?? '', notes: (a as any).notes ?? '', url: (a as any).url ?? '' })
     setEditOpen(true)
   }
   async function saveAsset() {
@@ -140,7 +140,7 @@ export default function AssetsPage() {
             <input className="input mt-1" value={draft.name} onChange={(e)=> setDraft({ ...draft, name: e.target.value })} required />
           </label>
           <label className="text-sm">Value
-            <input className="input mt-1" type="number" step="0.01" value={draft.value} onChange={(e)=> setDraft({ ...draft, value: Number(e.target.value) })} required />
+            <input className="input mt-1" type="number" step="0.01" placeholder="0.00" value={draft.value ?? ''} onChange={(e)=> setDraft({ ...draft, value: e.target.value === '' ? undefined : Number(e.target.value) })} required />
           </label>
           <label className="text-sm">Currency
             <select className="select mt-1" value={draft.currency} onChange={(e)=> setDraft({ ...draft, currency: e.target.value as any })}
@@ -152,7 +152,7 @@ export default function AssetsPage() {
             </select>
           </label>
           <label className="text-sm">Price paid
-            <input className="input mt-1" type="number" step="0.01" value={draft.pricePaid ?? 0} onChange={(e)=> setDraft({ ...draft, pricePaid: Number(e.target.value) })} />
+            <input className="input mt-1" type="number" step="0.01" placeholder="0.00" value={draft.pricePaid ?? ''} onChange={(e)=> setDraft({ ...draft, pricePaid: e.target.value === '' ? undefined : Number(e.target.value) })} />
           </label>
           <label className="text-sm">Acquired on
             <input className="input mt-1" type="date" value={draft.acquiredOn ?? ''} onChange={(e)=> setDraft({ ...draft, acquiredOn: e.target.value })} />

@@ -18,9 +18,9 @@ export default function BudgetsPage() {
   // const { data: incomes } = useIncomes()
   const qc = useQueryClient()
   const [editOpen, setEditOpen] = useState(false)
-  const [draft, setDraft] = useState<{ id?: string; category: string; limit: number; currency?: 'GBP'|'USD'|'EUR'|'CAD' } | null>(null)
+  const [draft, setDraft] = useState<{ id?: string; category: string; limit?: number; currency?: 'GBP'|'USD'|'EUR'|'CAD' } | null>(null)
   const [incOpen, setIncOpen] = useState(false)
-  const [incDraft, setIncDraft] = useState<{ id?: string; date: string; source: string; amount: number; currency: 'GBP'|'USD'|'EUR'|'CAD' } | null>(null)
+  const [incDraft, setIncDraft] = useState<{ id?: string; date: string; source: string; amount?: number; currency: 'GBP'|'USD'|'EUR'|'CAD' } | null>(null)
   const [csvOpen, setCsvOpen] = useState(false)
   const csvRef = useRef<HTMLDivElement | null>(null)
 
@@ -99,7 +99,7 @@ export default function BudgetsPage() {
   }
 
   function openNewBudget() {
-    setDraft({ category: '', limit: 0, currency: 'GBP' })
+    setDraft({ category: '', limit: undefined, currency: 'GBP' })
     setEditOpen(true)
   }
   function openEditBudget(b: any) {
@@ -115,7 +115,7 @@ export default function BudgetsPage() {
   }
 
   function openNewIncome() {
-    setIncDraft({ date: new Date().toISOString().slice(0,10), source: '', amount: 0, currency: 'GBP' })
+    setIncDraft({ date: new Date().toISOString().slice(0,10), source: '', amount: undefined, currency: 'GBP' })
     setIncOpen(true)
   }
   async function saveIncome() {
@@ -232,7 +232,7 @@ export default function BudgetsPage() {
             <input className="input mt-1" value={draft.category} onChange={(e)=> setDraft({ ...draft, category: e.target.value })} required />
           </label>
           <label className="text-sm">Limit
-            <input className="input mt-1" type="number" step="0.01" value={draft.limit} onChange={(e)=> setDraft({ ...draft, limit: Number(e.target.value) })} required />
+            <input className="input mt-1" type="number" step="0.01" placeholder="0.00" value={draft.limit ?? ''} onChange={(e)=> setDraft({ ...draft, limit: e.target.value === '' ? undefined : Number(e.target.value) })} required />
           </label>
           <label className="text-sm">Currency
             <select className="select mt-1" value={draft.currency} onChange={(e)=> setDraft({ ...draft, currency: e.target.value as any })}>
@@ -257,7 +257,7 @@ export default function BudgetsPage() {
             <input className="input mt-1" type="date" value={incDraft.date} onChange={(e)=> setIncDraft({ ...incDraft, date: e.target.value })} required />
           </label>
           <label className="text-sm">Amount
-            <input className="input mt-1" type="number" step="0.01" value={incDraft.amount} onChange={(e)=> setIncDraft({ ...incDraft, amount: Number(e.target.value) })} required />
+            <input className="input mt-1" type="number" step="0.01" placeholder="0.00" value={incDraft.amount ?? ''} onChange={(e)=> setIncDraft({ ...incDraft, amount: e.target.value === '' ? undefined : Number(e.target.value) })} required />
           </label>
           <label className="text-sm col-span-2">Source
             <input className="input mt-1" value={incDraft.source} onChange={(e)=> setIncDraft({ ...incDraft, source: e.target.value })} />
