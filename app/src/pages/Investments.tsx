@@ -2,7 +2,7 @@ import Card from '../components/Card'
 import { Metric } from '../components/Metric'
 import PageHeader from '../components/PageHeader'
 import { useHoldings, usePortfolioSnapshots } from '../hooks/useData'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Modal from '../components/Modal'
 import { fmp, alphaVantage } from '../services/marketData/provider'
 import { queryClient } from '../services/queryClient'
@@ -60,6 +60,7 @@ export default function InvestmentsPage() {
   const [resolution, setResolution] = useState<Resolution>('D')
   const [seriesLoading, setSeriesLoading] = useState(false)
   const [portfolioSeries, setPortfolioSeries] = useState<Array<{ date: string; value: number }>>([])
+  const snapshotAttemptedRef = useRef<string | null>(null)
 
   // function onSearchChange(value: string) {
   //   setQuery(value)
@@ -110,7 +111,10 @@ export default function InvestmentsPage() {
     if (Array.isArray(snapshots) && snapshots.length > 0) {
       if (timeframe === 'ALL') {
         const all = snapshots
-          .map(s => ({ date: s.date, value: convertAmount(s.value, (s as any).currency ?? baseCurrency, baseCurrency, rates) }))
+          .map(s => {
+            const v = (s as any).unrealized ?? ((s as any).value - ((s as any).bookCost ?? 0))
+            return { date: s.date, value: convertAmount(v, (s as any).currency ?? baseCurrency, baseCurrency, rates) }
+          })
           .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
         setPortfolioSeries(all)
         return
@@ -122,7 +126,10 @@ export default function InvestmentsPage() {
       const cutoffStr = cutoff.toISOString().slice(0, 10)
       const filtered = snapshots
         .filter(s => s.date >= cutoffStr)
-        .map(s => ({ date: s.date, value: convertAmount(s.value, (s as any).currency ?? baseCurrency, baseCurrency, rates) }))
+        .map(s => {
+          const v = (s as any).unrealized ?? ((s as any).value - ((s as any).bookCost ?? 0))
+          return { date: s.date, value: convertAmount(v, (s as any).currency ?? baseCurrency, baseCurrency, rates) }
+        })
         .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
       setPortfolioSeries(filtered)
       return
@@ -173,6 +180,7 @@ export default function InvestmentsPage() {
         const aggregated: Array<{ date: string; value: number }> = []
         for (const d of dates) {
           let valueThisDate = 0
+          let costThisDate = 0
           for (const h of holdings) {
             const sym = h.symbol
             const arr = arrays[sym]
@@ -180,6 +188,8 @@ export default function InvestmentsPage() {
               // Fallback to averageCost if no series
               const fallback = convertAmount(h.averageCost * h.quantity, (h as any).currency ?? baseCurrency, baseCurrency, rates)
               valueThisDate += fallback
+              const costNative = h.averageCost * h.quantity
+              costThisDate += convertAmount(costNative, (h as any).currency ?? baseCurrency, baseCurrency, rates)
               continue
             }
             let idx = pointers[sym]
@@ -189,8 +199,11 @@ export default function InvestmentsPage() {
             const holdingValueNative = (Number.isFinite(close) ? close : h.averageCost) * h.quantity
             const holdingValue = convertAmount(holdingValueNative, (h as any).currency ?? baseCurrency, baseCurrency, rates)
             valueThisDate += holdingValue
+            const costNative = h.averageCost * h.quantity
+            const costValue = convertAmount(costNative, (h as any).currency ?? baseCurrency, baseCurrency, rates)
+            costThisDate += costValue
           }
-          aggregated.push({ date: d, value: valueThisDate })
+          aggregated.push({ date: d, value: valueThisDate - costThisDate })
         }
 
         // Downsample per resolution
@@ -309,6 +322,30 @@ export default function InvestmentsPage() {
           )}
         </div>
       </Card>
+
+      {/* Auto-save daily snapshot without extra API calls */}
+      {useEffect(() => {
+        try {
+          const today = new Date().toISOString().slice(0, 10)
+          if (snapshotAttemptedRef.current === today) return
+          if (!Array.isArray(data) || data.length === 0) return
+          if (!Array.isArray(snapshots)) return
+          if (snapshots.some(s => s.date === today)) return
+          snapshotAttemptedRef.current = today
+          const payload = [{
+            id: (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : `snap_${Date.now()}`,
+            date: today,
+            value: totalCurrent,
+            currency: baseCurrency,
+            bookCost: totalCost,
+            unrealized: totalPnL,
+            pnl: totalPnL,
+          } as any]
+          ;(service.upsertPortfolioSnapshots?.(payload) as any)?.then(() => {
+            queryClient.invalidateQueries({ queryKey: ['portfolio-snapshots'] })
+          }).catch(() => {})
+        } catch {}
+      }, [data, snapshots, totalCurrent, totalCost, totalPnL, baseCurrency])}
 
       {/* Holdings snapshot */}
       <Card className="mt-4">
