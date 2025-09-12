@@ -47,6 +47,8 @@ serve(async (req) => {
     const url = new URL(req.url)
     const requestedUser = url.searchParams.get('user') || undefined
     const debug = url.searchParams.get('debug') === '1'
+    const backfillDaysRaw = Number(url.searchParams.get('backfill') ?? '0')
+    const backfillDays = Number.isFinite(backfillDaysRaw) ? Math.max(0, Math.min(90, Math.floor(backfillDaysRaw))) : 0
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -85,7 +87,8 @@ serve(async (req) => {
     let ratesCache: Record<string, Rates | null> = {}
 
     let written = 0
-    const results: Array<{ uid: string; holdings: number; wrote: boolean; totalCurrent?: number; totalCost?: number; unrealized?: number }> = []
+    let backfilledTotal = 0
+    const results: Array<{ uid: string; holdings: number; wrote: boolean; totalCurrent?: number; totalCost?: number; unrealized?: number; backfilled?: number }> = []
     for (const uid of userIds) {
       // Resolve base currency per user (fallback to DEFAULT_BASE)
       let baseCurrency = DEFAULT_BASE
@@ -134,7 +137,30 @@ serve(async (req) => {
         unrealized,
         pnl: unrealized,
       }, { onConflict: 'user_id,date' })
-      if (!upErr) { written++; results.push({ uid, holdings: list.length, wrote: true, totalCurrent, totalCost, unrealized }) }
+      if (!upErr) { written++; }
+
+      // Optional small backfill: reuse today's computed totals for the last N days
+      let userBackfilled = 0
+      if (backfillDays > 0) {
+        for (let i = 1; i <= backfillDays; i++) {
+          const d = new Date()
+          d.setDate(d.getDate() - i)
+          const dStr = d.toISOString().slice(0, 10)
+          const { error: upErr2 } = await supabase.from('portfolio_snapshots').upsert({
+            user_id: uid,
+            date: dStr,
+            value: totalCurrent,
+            currency: baseCurrency,
+            book_cost: totalCost,
+            unrealized,
+            pnl: unrealized,
+          }, { onConflict: 'user_id,date' })
+          if (!upErr2) { userBackfilled++; }
+        }
+        backfilledTotal += userBackfilled
+      }
+
+      results.push({ uid, holdings: list.length, wrote: true, totalCurrent, totalCost, unrealized, backfilled: userBackfilled })
 
       // Retention: keep last 24 months
       const cutoff = new Date()
@@ -143,7 +169,7 @@ serve(async (req) => {
       await supabase.from('portfolio_snapshots').delete().lt('date', cutoffStr).eq('user_id', uid)
     }
 
-    const body = debug ? { ok: true, written, results } : { ok: true, written }
+    const body = debug ? { ok: true, written, backfilled: backfilledTotal, results } : { ok: true, written }
     return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } })
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: String(e?.message ?? e) }), { status: 500 })
