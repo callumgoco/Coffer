@@ -398,12 +398,10 @@ export default function InvestmentsPage() {
             }
             const currencyToSave = draftCurrency
             console.debug('[Investments] Add holding click', { id, symbol, quantity: draftQty, averageCost: draftCost, region, currencyToSave, selectedResult })
-            // timeout guard to avoid indefinite hangs
-            const timeoutMs = 10000
-            await Promise.race([
-              service.upsertHoldings?.([{ id, symbol, quantity: draftQty, averageCost: draftCost, region, currency: currencyToSave } as any]) as any,
-              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), timeoutMs)),
-            ])
+            // Persist to backend (no artificial timeout; let the request complete)
+            await (service.upsertHoldings?.([
+              { id, symbol, quantity: draftQty, averageCost: draftCost, region, currency: currencyToSave } as any,
+            ]) as any)
             console.debug('[Investments] upsertHoldings complete')
             setAddOpen(false)
             setResults([])
