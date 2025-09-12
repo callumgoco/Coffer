@@ -14,20 +14,26 @@ create table if not exists public.portfolio_snapshots (
 
 alter table public.portfolio_snapshots enable row level security;
 
--- Basic RLS: users can manage their own rows
-create policy if not exists "snapshots_select_own"
+-- Drop existing policies to avoid conflicts when re-running
+drop policy if exists "snapshots_select_own" on public.portfolio_snapshots;
+drop policy if exists "snapshots_upsert_own" on public.portfolio_snapshots;
+drop policy if exists "snapshots_update_own" on public.portfolio_snapshots;
+drop policy if exists "snapshots_delete_own" on public.portfolio_snapshots;
+
+-- Re-create policies
+create policy "snapshots_select_own"
   on public.portfolio_snapshots
   for select using (auth.uid() = user_id);
 
-create policy if not exists "snapshots_upsert_own"
+create policy "snapshots_upsert_own"
   on public.portfolio_snapshots
   for insert with check (auth.uid() = user_id);
 
-create policy if not exists "snapshots_update_own"
+create policy "snapshots_update_own"
   on public.portfolio_snapshots
   for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
-create policy if not exists "snapshots_delete_own"
+create policy "snapshots_delete_own"
   on public.portfolio_snapshots
   for delete using (auth.uid() = user_id);
 
