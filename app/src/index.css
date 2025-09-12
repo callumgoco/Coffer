@@ -9,7 +9,7 @@
     --font-sans: "ClashGrotesk-Variable", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     --font-display: "ClashDisplay-Variable", "Clash Grotesk", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     /* Light theme tokens inspired by dashboard reference */
-    --bg: 246 248 252;            /* subtle app background */
+    --bg: 239 250 244;            /* subtle light green app background */
     --card: 255 255 255;          /* surface */
     --header: 255 255 255;        /* top bar */
     --sidebar: 255 255 255;       /* sidebar */
