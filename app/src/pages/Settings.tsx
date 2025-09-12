@@ -28,7 +28,26 @@ export default function SettingsPage() {
         headers: { Authorization: `Bearer ${accessToken}` },
         body: { confirm: true },
       })
-      if (error) throw new Error(error.message)
+      if (error) {
+        // Fallback: call function endpoint directly (work around SDK CORS/env issues)
+        const url = (import.meta as any).env?.VITE_SUPABASE_URL || ''
+        try {
+          const host = new URL(url).host
+          const projectRef = host.split('.')[0]
+          const fnUrl = `https://${projectRef}.functions.supabase.co/delete-account`
+          const res = await fetch(fnUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+            body: JSON.stringify({ confirm: true }),
+          })
+          if (!res.ok) {
+            const txt = await res.text()
+            throw new Error(`Function error ${res.status}: ${txt}`)
+          }
+        } catch (fErr: any) {
+          throw new Error(error.message || fErr?.message || 'Failed to call Edge Function')
+        }
+      }
       await signOut()
       navigate('/')
     } catch (e: any) {
