@@ -294,9 +294,7 @@ export default function InvestmentsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
         {(data ?? []).map(h => {
           const currentNative = (((h as any).lastPrice ?? h.averageCost) * h.quantity)
-          const costNative = h.averageCost * h.quantity
           const current = convertAmount(currentNative, (h as any).currency ?? baseCurrency, baseCurrency, rates)
-          const cost = convertAmount(costNative, (h as any).currency ?? baseCurrency, baseCurrency, rates)
           return (
             <Metric key={h.id} label={`${h.symbol} · ${((h as any).currency ?? '')}`} value={formatMoney(current, baseCurrency)} />
           )
