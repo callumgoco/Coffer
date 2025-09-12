@@ -65,10 +65,13 @@ serve(async (req) => {
     // Delete profile row
     try { await supabaseAdmin.from('profiles').delete().eq('id', userId) } catch (_) {}
 
-    // Finally, delete the auth user itself
-    try { await supabaseAdmin.auth.admin.deleteUser(userId) } catch (e) {
-      // If this fails, still report cleanup status
-      console.error('delete auth user failed', e)
+    // Invalidate all refresh tokens, then delete the auth user itself (hard-fail if unsuccessful)
+    try {
+      try { await supabaseAdmin.auth.admin.invalidateAllRefreshTokens(userId) } catch (_) {}
+      const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(userId)
+      if (delErr) throw delErr
+    } catch (e) {
+      return new Response(JSON.stringify({ error: 'Failed to delete auth user', detail: String((e as any)?.message ?? e) }), { status: 500, headers: corsHeaders })
     }
 
     return new Response(JSON.stringify({ ok: true }), { headers: { 'content-type': 'application/json', ...corsHeaders } })
