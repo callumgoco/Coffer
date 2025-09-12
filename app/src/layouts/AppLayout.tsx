@@ -2,6 +2,8 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import CurrencySelect from '../components/CurrencySelect'
 import { Search, Sun, Moon, PieChart, Settings, Home, Wallet, BarChart3, Table, CircleDollarSign, ChevronDown } from 'lucide-react'
 import { useThemeStore } from '../stores/theme'
+import { useEffect } from 'react'
+import { useCurrencyStore } from '../stores/currency'
 import DateRangePicker, { type DateRange } from '../components/DateRangePicker'
 import { useState } from 'react'
 import { useAuthStore } from '../stores/auth'
@@ -24,6 +26,9 @@ export function AppLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const signOut = useAuthStore(s => s.signOut)
+  const profile = useAuthStore(s => s.profile)
+  const baseCurrency = useCurrencyStore(s => s.baseCurrency)
+  const setBaseCurrency = useCurrencyStore(s => s.setBaseCurrency)
   const navigate = useNavigate()
 
   async function handleSignOut() {
@@ -31,6 +36,12 @@ export function AppLayout() {
     setUserMenuOpen(false)
     navigate('/login')
   }
+
+  // Sync base currency from profile → local store so server snapshots align
+  useEffect(() => {
+    const p = profile?.base_currency as any
+    if (p && p !== baseCurrency) setBaseCurrency(p)
+  }, [profile, baseCurrency, setBaseCurrency])
 
   return (
     <div className="min-h-screen bg-bg text-text">

@@ -1,3 +1,4 @@
+/* eslint-disable */
 // deno-lint-ignore-file no-explicit-any
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.5"
@@ -108,6 +109,12 @@ serve(async (req) => {
       const payload = { id, user_id: uid, date: today, value: totalCurrent, currency: baseCurrency, book_cost: totalCost, unrealized, pnl: unrealized }
       const { error: upErr } = await supabase.from('portfolio_snapshots').upsert(payload, { onConflict: 'user_id,date' })
       if (!upErr) written++
+
+      // Retention: keep last 24 months
+      const cutoff = new Date()
+      cutoff.setMonth(cutoff.getMonth() - 24)
+      const cutoffStr = cutoff.toISOString().slice(0, 10)
+      await supabase.from('portfolio_snapshots').delete().lt('date', cutoffStr).eq('user_id', uid)
     }
 
     return new Response(JSON.stringify({ ok: true, written }), { headers: { 'content-type': 'application/json' } })

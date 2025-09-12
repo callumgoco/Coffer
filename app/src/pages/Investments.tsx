@@ -56,10 +56,13 @@ export default function InvestmentsPage() {
   // Portfolio chart state
   type Timeframe = '1M' | '3M' | '6M' | '1Y' | 'ALL'
   type Resolution = 'D' | 'W' | 'M'
+  type SeriesMode = 'UNREALIZED' | 'TOTAL'
   const [timeframe, setTimeframe] = useState<Timeframe>('3M')
   const [resolution, setResolution] = useState<Resolution>('D')
   const [seriesLoading, setSeriesLoading] = useState(false)
+  const [seriesMode, setSeriesMode] = useState<SeriesMode>('UNREALIZED')
   const [portfolioSeries, setPortfolioSeries] = useState<Array<{ date: string; value: number }>>([])
+  const [portfolioSeriesTotal, setPortfolioSeriesTotal] = useState<Array<{ date: string; value: number }>>([])
   const snapshotAttemptedRef = useRef<string | null>(null)
 
   // function onSearchChange(value: string) {
@@ -110,13 +113,17 @@ export default function InvestmentsPage() {
     // If snapshots exist, filter to timeframe and convert currency if needed
     if (Array.isArray(snapshots) && snapshots.length > 0) {
       if (timeframe === 'ALL') {
-        const all = snapshots
+        const allTotal = snapshots
+          .map(s => ({ date: s.date, value: convertAmount((s as any).value, (s as any).currency ?? baseCurrency, baseCurrency, rates) }))
+          .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+        const allUnreal = snapshots
           .map(s => {
             const v = (s as any).unrealized ?? ((s as any).value - ((s as any).bookCost ?? 0))
             return { date: s.date, value: convertAmount(v, (s as any).currency ?? baseCurrency, baseCurrency, rates) }
           })
           .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
-        setPortfolioSeries(all)
+        setPortfolioSeries(allUnreal)
+        setPortfolioSeriesTotal(allTotal)
         return
       }
       const daysMap: Record<Exclude<Timeframe, 'ALL'>, number> = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365 }
@@ -124,14 +131,19 @@ export default function InvestmentsPage() {
       const cutoff = new Date()
       cutoff.setDate(cutoff.getDate() - rangeDays - 2)
       const cutoffStr = cutoff.toISOString().slice(0, 10)
-      const filtered = snapshots
+      const filteredTotal = snapshots
+        .filter(s => s.date >= cutoffStr)
+        .map(s => ({ date: s.date, value: convertAmount((s as any).value, (s as any).currency ?? baseCurrency, baseCurrency, rates) }))
+        .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+      const filteredUnreal = snapshots
         .filter(s => s.date >= cutoffStr)
         .map(s => {
           const v = (s as any).unrealized ?? ((s as any).value - ((s as any).bookCost ?? 0))
           return { date: s.date, value: convertAmount(v, (s as any).currency ?? baseCurrency, baseCurrency, rates) }
         })
         .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
-      setPortfolioSeries(filtered)
+      setPortfolioSeries(filteredUnreal)
+      setPortfolioSeriesTotal(filteredTotal)
       return
     }
     const holdings = Array.isArray(data) ? (data as Array<any>) : []
@@ -178,6 +190,7 @@ export default function InvestmentsPage() {
         }
 
         const aggregated: Array<{ date: string; value: number }> = []
+        const aggregatedTotal: Array<{ date: string; value: number }> = []
         for (const d of dates) {
           let valueThisDate = 0
           let costThisDate = 0
@@ -204,12 +217,15 @@ export default function InvestmentsPage() {
             costThisDate += costValue
           }
           aggregated.push({ date: d, value: valueThisDate - costThisDate })
+          aggregatedTotal.push({ date: d, value: valueThisDate })
         }
 
         // Downsample per resolution
         let sampled = aggregated
+        let sampledTotal = aggregatedTotal
         if (resolution === 'W') {
           const out: typeof aggregated = []
+          const outT: typeof aggregatedTotal = []
           let lastPicked: string | null = null
           for (const p of aggregated) {
             if (!lastPicked) { out.push(p); lastPicked = p.date; continue }
@@ -218,20 +234,35 @@ export default function InvestmentsPage() {
             const diffDays = Math.floor((curr.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
             if (diffDays >= 7) { out.push(p); lastPicked = p.date }
           }
+          lastPicked = null
+          for (const p of aggregatedTotal) {
+            if (!lastPicked) { outT.push(p); lastPicked = p.date; continue }
+            const lastDate = new Date(lastPicked)
+            const curr = new Date(p.date)
+            const diffDays = Math.floor((curr.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
+            if (diffDays >= 7) { outT.push(p); lastPicked = p.date }
+          }
           sampled = out
+          sampledTotal = outT
         } else if (resolution === 'M') {
           const byMonth = new Map<string, { date: string; value: number }>()
+          const byMonthT = new Map<string, { date: string; value: number }>()
           for (const p of aggregated) {
             const key = p.date.slice(0, 7)
             // keep last entry of the month
             byMonth.set(key, p)
           }
+          for (const p of aggregatedTotal) {
+            const key = p.date.slice(0, 7)
+            byMonthT.set(key, p)
+          }
           sampled = Array.from(byMonth.values()).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+          sampledTotal = Array.from(byMonthT.values()).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
         }
 
-        if (!cancelled) setPortfolioSeries(sampled)
+        if (!cancelled) { setPortfolioSeries(sampled); setPortfolioSeriesTotal(sampledTotal) }
       } catch (e) {
-        if (!cancelled) setPortfolioSeries([])
+        if (!cancelled) { setPortfolioSeries([]); setPortfolioSeriesTotal([]) }
       } finally {
         if (!cancelled) setSeriesLoading(false)
       }
@@ -288,13 +319,17 @@ export default function InvestmentsPage() {
       {/* Portfolio chart */}
       <Card className="mt-4">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-medium">Portfolio value</h2>
+          <h2 className="text-lg font-medium">{seriesMode === 'UNREALIZED' ? 'Unrealized gains' : 'Total value'}</h2>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 flex-nowrap">
               {(['1M','3M','6M','1Y','ALL'] as any).map((tf: '1M'|'3M'|'6M'|'1Y'|'ALL') => (
                 <button key={tf} className={`btn btn-sm ${timeframe === tf ? 'btn-primary' : ''}`} onClick={() => setTimeframe(tf)}>{tf}</button>
               ))}
             </div>
+            <select className="input input-sm" value={seriesMode} onChange={e=>setSeriesMode(e.target.value as any)}>
+              <option value="UNREALIZED">Unrealized</option>
+              <option value="TOTAL">Total value</option>
+            </select>
             <select className="input input-sm" value={resolution} onChange={e=>setResolution(e.target.value as any)}>
               <option value="D">Daily</option>
               <option value="W">Weekly</option>
@@ -311,7 +346,7 @@ export default function InvestmentsPage() {
             <div className="h-full flex items-center justify-center text-sm text-subtle">No chart data</div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={portfolioSeries}>
+              <LineChart data={seriesMode === 'UNREALIZED' ? portfolioSeries : portfolioSeriesTotal}>
                 <CartesianGrid stroke="rgb(var(--muted))" strokeOpacity={0.2} />
                 <XAxis dataKey="date" stroke="currentColor" tick={{ fill: 'currentColor' }} tickFormatter={(d:any)=>String(d).slice(5)} minTickGap={24} />
                 <YAxis stroke="currentColor" tick={{ fill: 'currentColor' }} tickFormatter={(v:any)=>formatMoney(Number(v)||0, baseCurrency)} width={80} />
