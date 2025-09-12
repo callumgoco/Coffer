@@ -33,6 +33,8 @@ export default function TransactionsPage() {
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const [csvOpen, setCsvOpen] = useState(false)
   const csvRef = useRef<HTMLDivElement | null>(null)
+  const [creatingAcc, setCreatingAcc] = useState(false)
+  const [newAcc, setNewAcc] = useState<{ name: string; type: 'checking'|'savings'|'credit'|'brokerage'|'cash'; currency: 'GBP'|'USD'|'EUR'|'CAD' } | null>(null)
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setCsvOpen(false) }
@@ -108,6 +110,17 @@ export default function TransactionsPage() {
       qc.invalidateQueries({ queryKey: ['transactions'] }),
       qc.invalidateQueries({ queryKey: ['budgets'] }),
     ])
+  }
+
+  async function createAccountInline() {
+    if (!newAcc) return
+    const id = crypto.randomUUID()
+    const row = { id, name: newAcc.name.trim() || 'New account', type: newAcc.type, balance: 0, currency: newAcc.currency }
+    await service.upsertAccounts?.([row] as any)
+    await qc.invalidateQueries({ queryKey: ['accounts'] })
+    setCreatingAcc(false)
+    setNewAcc(null)
+    setDraft(d => d ? { ...d, accountId: id } : d)
   }
 
   function downloadTemplate() {
@@ -369,9 +382,34 @@ export default function TransactionsPage() {
               </select>
             </label>
             <label className="text-sm col-span-2">Account
-              <select className="select mt-1" value={draft.accountId} onChange={(e)=> setDraft({ ...draft, accountId: e.target.value })}>
-                {(accounts ?? []).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </select>
+              <div className="mt-1 flex items-center gap-2">
+                <select className="select flex-1" value={draft.accountId} onChange={(e)=> setDraft({ ...draft, accountId: e.target.value })}>
+                  {(accounts ?? []).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
+                <button type="button" className="btn btn-outline" onClick={()=> { setCreatingAcc(v=>!v); setNewAcc({ name: '', type: 'checking', currency: 'GBP' }) }}>New</button>
+              </div>
+              {creatingAcc ? (
+                <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <input className="input" placeholder="Name" value={newAcc?.name ?? ''} onChange={(e)=> setNewAcc(p=>({ ...(p as any), name: e.target.value }))} />
+                  <select className="select" value={newAcc?.type ?? 'checking'} onChange={(e)=> setNewAcc(p=>({ ...(p as any), type: e.target.value as any }))}>
+                    <option value="checking">Checking</option>
+                    <option value="savings">Savings</option>
+                    <option value="credit">Credit</option>
+                    <option value="brokerage">Brokerage</option>
+                    <option value="cash">Cash</option>
+                  </select>
+                  <select className="select" value={newAcc?.currency ?? 'GBP'} onChange={(e)=> setNewAcc(p=>({ ...(p as any), currency: e.target.value as any }))}>
+                    <option value="GBP">GBP</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="CAD">CAD</option>
+                  </select>
+                  <div className="md:col-span-3 flex justify-end gap-2">
+                    <button type="button" className="btn btn-outline" onClick={()=> { setCreatingAcc(false); setNewAcc(null) }}>Cancel</button>
+                    <button type="button" className="btn btn-primary" onClick={createAccountInline}>Create</button>
+                  </div>
+                </div>
+              ) : null}
             </label>
             <label className="text-sm">Currency
               <select className="select mt-1" value={draft.currency} onChange={(e)=> setDraft({ ...draft, currency: e.target.value as any })}>

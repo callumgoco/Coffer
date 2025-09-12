@@ -19,6 +19,11 @@ export const mockDb = {
 
 export const mockService = {
   async getAccounts() { return mockDb.accounts },
+  async upsertAccounts(rows: Account[]) {
+    const byId = new Map(mockDb.accounts.map(a => [a.id, a]))
+    for (const r of rows) byId.set(r.id, r)
+    mockDb.accounts = Array.from(byId.values())
+  },
   async getTransactions() { return mockDb.transactions },
   async getBudgets() {
     // compute spent from transactions, matching currency via account

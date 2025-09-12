@@ -3,6 +3,7 @@ import { mockService } from './mock'
 
 export type Service = {
   getAccounts(): Promise<any[]>
+  upsertAccounts?: (rows: any[]) => Promise<void>
   getTransactions(): Promise<any[]>
   getBudgets(): Promise<any[]>
   getHoldings(): Promise<any[]>

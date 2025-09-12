@@ -2,10 +2,36 @@ import Card from '../components/Card'
 import PageHeader from '../components/PageHeader'
 import { useThemeStore } from '../stores/theme'
 import { useCurrencyStore } from '../stores/currency'
+import { useState } from 'react'
+import { ConfirmDialog } from '../components/Modal'
+import { supabase } from '../services/supabase/client'
+import { useAuthStore } from '../stores/auth'
+import { useNavigate } from 'react-router-dom'
 
 export default function SettingsPage() {
   const { theme, toggle } = useThemeStore()
   const { baseCurrency, setBaseCurrency } = useCurrencyStore()
+  const navigate = useNavigate()
+  const signOut = useAuthStore((s) => s.signOut)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  async function onConfirmDelete() {
+    try {
+      setDeleting(true)
+      setError(null)
+      if (!supabase) throw new Error('Supabase not configured')
+      const { error } = await supabase.functions.invoke('delete-account', { body: { confirm: true } })
+      if (error) throw new Error(error.message)
+      await signOut()
+      navigate('/')
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to delete account')
+    } finally {
+      setDeleting(false)
+      setConfirmOpen(false)
+    }
+  }
   // async function handleSync() {
   //   alert('Supabase sync will be implemented after schema approval.')
   // }
@@ -35,7 +61,24 @@ export default function SettingsPage() {
             </div>
           </div>
         </Card>
+        <Card className="md:col-span-2">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="font-medium text-danger">Delete account and information</div>
+              <div className="text-subtler text-sm mt-1">This permanently deletes your account and all associated data. This action cannot be undone.</div>
+              {error ? <div className="text-danger text-sm mt-2">{error}</div> : null}
+            </div>
+            <button className="btn btn-danger" onClick={()=> setConfirmOpen(true)} disabled={deleting}>{deleting ? 'Deleting…' : 'Delete account and data'}</button>
+          </div>
+        </Card>
       </div>
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => !deleting && setConfirmOpen(false)}
+        onConfirm={onConfirmDelete}
+        title="Delete account and all data?"
+        body="This is permanent. All your transactions, budgets, assets, holdings, watchlist, incomes, and snapshots will be deleted."
+      />
     </>
   )
 }

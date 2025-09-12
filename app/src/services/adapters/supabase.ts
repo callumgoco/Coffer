@@ -64,6 +64,21 @@ export const supabaseService = {
     const rows = await selectAll('accounts')
     return rows as Account[]
   },
+  async upsertAccounts(rows: Account[]): Promise<void> {
+    if (!supabase) return
+    const uid = await getUserId()
+    if (!uid) return
+    const payload = rows.map((a) => ({
+      id: a.id,
+      name: a.name,
+      type: a.type,
+      balance: a.balance,
+      currency: a.currency,
+      user_id: uid,
+    }))
+    const { error } = await supabase.from('accounts').upsert(payload, { onConflict: 'id' })
+    if (error) throw error
+  },
   async getTransactions(): Promise<Transaction[]> {
     const rows = await selectAll('transactions')
     return rows.map((r: any) => ({
