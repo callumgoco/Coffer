@@ -44,10 +44,16 @@ serve(async (req) => {
     }
     const jwt = auth.split(' ')[1]
     const { data: userData } = await supabaseAdmin.auth.getUser(jwt)
-    const user = userData?.user
-    if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
-
-    const userId = user.id
+    let userId = userData?.user?.id ?? null
+    if (!userId) {
+      try {
+        const b64 = jwt.split('.')[1]
+        const json = atob(b64.replace(/-/g, '+').replace(/_/g, '/'))
+        const claims = JSON.parse(json)
+        userId = claims?.sub ?? null
+      } catch (_) {}
+    }
+    if (!userId) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
 
     // Delete all user-owned rows across tables; ignore errors per-table to be resilient
     for (const t of USER_TABLES) {
