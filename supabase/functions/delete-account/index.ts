@@ -19,8 +19,10 @@ serve(async (req) => {
   try {
     if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 })
 
+    // SUPABASE_URL is provided by the Edge runtime
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    // SERVICE_ROLE_KEY must be provided via function secret (reserved prefix SUPABASE_ is blocked by CLI)
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       return new Response(JSON.stringify({ error: 'Missing Supabase env' }), { status: 500 })
     }
