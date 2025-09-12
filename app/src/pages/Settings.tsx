@@ -6,9 +6,9 @@ import { useCurrencyStore } from '../stores/currency'
 export default function SettingsPage() {
   const { theme, toggle } = useThemeStore()
   const { baseCurrency, setBaseCurrency } = useCurrencyStore()
-  async function handleSync() {
-    alert('Supabase sync will be implemented after schema approval.')
-  }
+  // async function handleSync() {
+  //   alert('Supabase sync will be implemented after schema approval.')
+  // }
   return (
     <>
       <PageHeader title="Settings" />

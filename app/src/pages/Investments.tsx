@@ -298,7 +298,6 @@ export default function InvestmentsPage() {
           const current = convertAmount(currentNative, (h as any).currency ?? baseCurrency, baseCurrency, rates)
           const cost = convertAmount(costNative, (h as any).currency ?? baseCurrency, baseCurrency, rates)
           const gain = current - cost
-          const pct = cost > 0 ? (gain / cost) * 100 : 0
           return (
             <Metric key={h.id} label={`${h.symbol} · ${((h as any).currency ?? '')}`} value={formatMoney(current, baseCurrency)} />
           )
