@@ -1,0 +1,170 @@
+/* Fonts are loaded via Fontshare in index.html */
+
+@import "tailwindcss";
+
+/* CSS variables for theming */
+@layer base {
+  :root {
+    /* Global font families */
+    --font-sans: "ClashGrotesk-Variable", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    --font-display: "ClashDisplay-Variable", "Clash Grotesk", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    /* Light theme tokens inspired by dashboard reference */
+    --bg: 246 248 252;            /* subtle app background */
+    --card: 255 255 255;          /* surface */
+    --header: 255 255 255;        /* top bar */
+    --sidebar: 255 255 255;       /* sidebar */
+    --muted: 243 244 246;         /* hover/secondary surface */
+    --border: 229 231 235;        /* separators */
+    --text: 17 24 39;             /* primary text */
+    --subtler: 107 114 128;       /* secondary text */
+    --accent: 16 185 129;         /* emerald-500 */
+    --danger: 239 68 68;          /* red-500 */
+    --success: 34 197 94;         /* green-500 */
+  }
+  .dark {
+    /* Dark theme tokens to match reference design */
+    --bg: 24 28 35;               /* page background */
+    --card: 36 42 51;             /* card background */
+    --header: 36 42 51;           /* top bar surface */
+    --sidebar: 32 37 45;          /* sidebar slightly darker */
+    --muted: 49 57 69;            /* hover/raised */
+    --border: 60 70 83;           /* subtle borders */
+    --text: 236 239 244;          /* high-contrast text */
+    --subtler: 146 154 170;       /* secondary text */
+    --accent: 16 185 129;         /* emerald accent used in charts */
+    --danger: 248 113 113;        /* softer red */
+    --success: 16 185 129;        /* emerald */
+  }
+
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--text));
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+@layer components {
+  .card {
+    background-color: rgb(var(--card));
+    border-radius: 0.75rem; /* rounded-lg to match tiles */
+    border: 1px solid rgb(var(--border));
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.02), 0 1px 2px rgb(0 0 0 / 0.06);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem; /* 8px */
+    border-radius: 0.375rem; /* rounded-md */
+    border: 1px solid rgb(var(--border));
+    padding: 0.5rem 0.75rem; /* py-2 px-3 */
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 500;
+    transition: color 150ms, background-color 150ms, border-color 150ms, opacity 150ms, transform 100ms;
+    outline: none;
+    background-color: rgb(var(--card));
+  }
+  .btn:hover { background-color: rgb(var(--muted)); }
+  .btn:focus-visible {
+    box-shadow: 0 0 0 2px rgb(var(--accent));
+  }
+  .btn:active { transform: translateY(0.5px); }
+  .btn[disabled], .btn:disabled { opacity: 0.6; pointer-events: none; }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.375rem;
+    border: 1px solid transparent;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #fff;
+    background-color: rgb(var(--accent));
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-outline { background-color: transparent; border-color: rgb(var(--border)); }
+  .btn-outline:hover { background-color: rgb(var(--muted)); }
+  .btn-ghost { background-color: transparent; border-color: transparent; }
+  .btn-ghost:hover { background-color: rgb(var(--muted)); }
+  .btn-danger { color: #fff; background-color: rgb(var(--danger)); border-color: transparent; }
+  .btn-danger:hover { opacity: 0.9; }
+  .btn-sm { padding: 0.375rem 0.5rem; font-size: 0.8125rem; }
+  .btn-icon { width: 2rem; height: 2rem; padding: 0; }
+
+  .input, .select, .textarea {
+    width: 100%;
+    border: 1px solid rgb(var(--border));
+    background-color: rgb(var(--card));
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.625rem;
+    font-size: 0.875rem;
+    transition: border-color 150ms, box-shadow 150ms, background-color 150ms;
+    outline: none;
+  }
+  .input::placeholder { color: rgb(var(--subtler)); }
+  .input:focus, .select:focus, .textarea:focus { box-shadow: 0 0 0 2px rgb(var(--accent)); }
+  .input[disabled], .select[disabled], .textarea[disabled] { opacity: 0.6; cursor: not-allowed; }
+
+  .table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .table thead th {
+    position: sticky;
+    top: 0;
+    background-color: rgb(var(--card));
+    z-index: 1;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: rgb(var(--subtler));
+    padding: 0.5rem 0;
+  }
+  .table tbody tr { border-top: 1px solid rgb(var(--border)); transition: background-color 150ms; }
+  .table tbody tr:hover { background-color: rgb(var(--muted)); }
+  .table td { padding: 0.5rem 0; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    background-color: rgb(var(--muted));
+  }
+
+  /* Subtle separators for sections */
+  .section-gap { padding: 1rem; }
+
+  /* Modal animations */
+  .modal-overlay { animation: fade-in 150ms ease-out both; }
+  .modal-panel { animation: pop-in 180ms ease-out both; }
+}
+
+/* Bridges for custom variable-based utilities */
+@layer utilities {
+  .bg-bg { background-color: rgb(var(--bg)); }
+  .bg-card { background-color: rgb(var(--card)); }
+  .bg-header { background-color: rgb(var(--header)); }
+  .bg-sidebar { background-color: rgb(var(--sidebar)); }
+  .bg-muted { background-color: rgb(var(--muted)); }
+  .bg-accent { background-color: rgb(var(--accent)); }
+  .text-accent { color: rgb(var(--accent)); }
+  .text-text { color: rgb(var(--text)); }
+  .text-subtler { color: rgb(var(--subtler)); }
+  .border-border { border-color: rgb(var(--border)); }
+  .ring-accent { --tw-ring-color: rgb(var(--accent)); }
+  .text-danger { color: rgb(var(--danger)); }
+  .text-success { color: rgb(var(--success)); }
+}
+
+@keyframes fade-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes pop-in { from { opacity: 0; transform: translateY(4px) scale(0.98) } to { opacity: 1; transform: translateY(0) scale(1) } }

@@ -1,0 +1,5 @@
+[
+  { "id": "acc_chk_1", "name": "HSBC Current", "type": "checking", "balance": 2450.32, "currency": "GBP" },
+  { "id": "acc_svg_1", "name": "Monzo Savings", "type": "savings", "balance": 5200.00, "currency": "GBP" },
+  { "id": "acc_brk_1", "name": "Freetrade ISA", "type": "brokerage", "balance": 12850.75, "currency": "GBP" }
+]

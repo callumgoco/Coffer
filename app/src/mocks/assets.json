@@ -1,0 +1,4 @@
+[
+  { "id": "ast_cash", "name": "Cash on hand", "value": 200.00 },
+  { "id": "ast_goal", "name": "Holiday Fund", "value": 1200.00 }
+]

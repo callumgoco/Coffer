@@ -1,0 +1,5 @@
+[
+  { "id": "bdg_groceries", "category": "Groceries", "limit": 350, "spent": 110.33, "currency": "GBP" },
+  { "id": "bdg_transport", "category": "Transport", "limit": 120, "spent": 42.90, "currency": "GBP" },
+  { "id": "bdg_eatingout", "category": "Eating Out", "limit": 180, "spent": 68.12, "currency": "GBP" }
+]

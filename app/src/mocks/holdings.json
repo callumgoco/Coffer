@@ -1,0 +1,5 @@
+[
+  { "id": "hld_1", "symbol": "AAPL", "quantity": 12, "averageCost": 155.50 },
+  { "id": "hld_2", "symbol": "MSFT", "quantity": 5, "averageCost": 300.00 },
+  { "id": "hld_3", "symbol": "TSLA", "quantity": 2, "averageCost": 220.00 }
+]
