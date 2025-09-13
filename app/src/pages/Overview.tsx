@@ -1,5 +1,6 @@
 import Card from '../components/Card'
 import PageHeader from '../components/PageHeader'
+import { isMockService } from '../services/adapters'
 import { Metric } from '../components/Metric'
 import { formatMoney } from '../utils/money'
 import { AlphaVantageProvider, fmp } from '../services/marketData/provider'
@@ -87,7 +88,7 @@ export default function Overview() {
       <Card className="lg:col-span-2">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium">Spending this month</h2>
-          <span className="badge text-subtler">mock data</span>
+          {isMockService ? <span className="badge text-subtler">mock data</span> : null}
         </div>
         <div className="mt-4 h-40">
           <ResponsiveContainer width="100%" height="100%">

@@ -25,8 +25,11 @@ export type Service = {
 }
 
 const dataMode = (import.meta as any).env?.VITE_DATA_MODE ?? 'mock'
+const hasSupabaseEnv = Boolean((import.meta as any).env?.VITE_SUPABASE_URL && (import.meta as any).env?.VITE_SUPABASE_ANON_KEY)
+export const isLiveService = (dataMode === 'live' && hasSupabaseEnv)
+export const isMockService = !isLiveService
 
-export const service: Service = (dataMode === 'live' && (import.meta as any).env?.VITE_SUPABASE_URL && (import.meta as any).env?.VITE_SUPABASE_ANON_KEY)
+export const service: Service = isLiveService
   ? (supabaseService as unknown as Service)
   : (mockService as unknown as Service)
 

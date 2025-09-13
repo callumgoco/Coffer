@@ -3,7 +3,7 @@ import PageHeader from '../components/PageHeader'
 import { useTransactions, useBudgets } from '../hooks/useData'
 import CSVImport from '../components/CSVImport'
 import { useQueryClient } from '@tanstack/react-query'
-import { service } from '../services/adapters'
+import { service, isMockService } from '../services/adapters'
 import { useMemo, useState, useEffect, useRef } from 'react'
 import EmptyState from '../components/EmptyState'
 import Skeleton from '../components/Skeleton'
@@ -263,7 +263,7 @@ export default function TransactionsPage() {
       <Card className="mt-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium">Spending trend</h2>
-          <span className="badge text-subtler">mock data</span>
+          {isMockService ? <span className="badge text-subtler">mock data</span> : null}
         </div>
         <div className="mt-4 h-48">
           <ResponsiveContainer width="100%" height="100%">
