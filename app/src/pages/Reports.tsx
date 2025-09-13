@@ -5,7 +5,8 @@ import { useMemo } from 'react'
 import { useCurrencyStore } from '../stores/currency'
 import { useRates, convertAmount } from '../services/currency/rates'
 import { formatMoney } from '../utils/money'
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend } from 'recharts'
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend, CartesianGrid } from 'recharts'
+import { xAxisCommon, yAxisCommon, gridCommon, tooltipCommon } from '../charts/theme'
 
 export default function ReportsPage() {
   const { data: txs } = useTransactions()
@@ -61,11 +62,12 @@ export default function ReportsPage() {
         <div className="h-80 mt-2">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={cashflow}>
-              <XAxis dataKey="month" stroke="currentColor" tick={{ fill: 'currentColor' }} />
-              <YAxis stroke="currentColor" tick={{ fill: 'currentColor' }} tickFormatter={(v:any)=>formatMoney(Number(v)||0, baseCurrency)} width={80} />
-              <Tooltip contentStyle={{ background: 'rgb(var(--card))', border: '1px solid rgb(var(--border))' }} formatter={(v:any)=>formatMoney(Number(v)||0, baseCurrency)} />
-              <Bar dataKey="income" fill="rgb(var(--accent))" />
-              <Bar dataKey="expense" fill="#9ca3af" />
+              <CartesianGrid {...gridCommon} />
+              <XAxis dataKey="month" {...xAxisCommon} />
+              <YAxis {...yAxisCommon} tickFormatter={(v:any)=>formatMoney(Number(v)||0, baseCurrency)} width={80} />
+              <Tooltip {...tooltipCommon} formatter={(v:any)=>formatMoney(Number(v)||0, baseCurrency)} />
+              <Bar dataKey="income" fill="rgb(var(--accent))" radius={[4,4,0,0]} />
+              <Bar dataKey="expense" fill="#9ca3af" radius={[4,4,0,0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

@@ -12,7 +12,8 @@ import { Metric } from '../components/Metric'
 import { useCurrencyStore } from '../stores/currency'
 import { useRates, convertAmount } from '../services/currency/rates'
 import { formatMoney } from '../utils/money'
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts'
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
+import { xAxisCommon, yAxisCommon, gridCommon, areaCommon, tooltipCommon } from '../charts/theme'
 
 export default function TransactionsPage() {
   const { data: txs, isLoading } = useTransactions()
@@ -273,10 +274,17 @@ export default function TransactionsPage() {
                   <stop offset="100%" stopColor="rgb(var(--accent))" stopOpacity="0" />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="date" stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} hide={spendSeries.length > 30} />
-              <YAxis stroke="currentColor" tick={{ fill: 'currentColor', fontSize: 12 }} hide />
-              <Tooltip contentStyle={{ background: 'rgb(var(--card))', border: '1px solid rgb(var(--border))' }} formatter={(v:any)=>formatMoney(Number(v)||0, baseCurrency)} />
-              <Area type="monotone" dataKey="value" stroke="rgb(var(--accent))" fill="url(#transactionsSpendGradient)" strokeWidth={2} />
+              <CartesianGrid {...gridCommon} />
+              <XAxis
+                dataKey="date"
+                {...xAxisCommon}
+                hide={spendSeries.length > 30}
+                minTickGap={24}
+                tickFormatter={(d:any)=>String(d).slice(5)}
+              />
+              <YAxis {...yAxisCommon} hide />
+              <Tooltip {...tooltipCommon} formatter={(v:any)=>formatMoney(Number(v)||0, baseCurrency)} labelFormatter={(d:any)=>new Date(d).toLocaleDateString()} />
+              <Area {...areaCommon as any} dataKey="value" fill="url(#transactionsSpendGradient)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>

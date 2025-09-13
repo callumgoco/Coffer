@@ -8,6 +8,7 @@ import { fmp, alphaVantage } from '../services/marketData/provider'
 import { queryClient } from '../services/queryClient'
 import { service } from '../services/adapters'
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
+import { xAxisCommon, yAxisCommon, gridCommon, areaCommon, tooltipCommon } from '../charts/theme'
 import EmptyState from '../components/EmptyState'
 import { PencilIcon } from '../components/icons'
 import Skeleton from '../components/Skeleton'
@@ -353,11 +354,11 @@ export default function InvestmentsPage() {
                     <stop offset="100%" stopColor="rgb(var(--accent))" stopOpacity="0" />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="rgb(var(--muted))" strokeOpacity={0.2} />
-                <XAxis dataKey="date" stroke="currentColor" tick={{ fill: 'currentColor' }} tickFormatter={(d:any)=>String(d).slice(5)} minTickGap={24} />
-                <YAxis stroke="currentColor" tick={{ fill: 'currentColor' }} tickFormatter={(v:any)=>formatMoney(Number(v)||0, baseCurrency)} width={80} />
-                <Tooltip contentStyle={{ background: 'rgb(var(--card))', border: '1px solid rgb(var(--border))' }} formatter={(v:any)=>formatMoney(Number(v)||0, baseCurrency)} labelFormatter={(d:any)=>new Date(d).toLocaleDateString()} />
-                <Area type="monotone" dataKey="value" stroke="rgb(var(--accent))" fill="url(#portfolioGradient)" strokeWidth={2} dot={false} />
+                <CartesianGrid {...gridCommon} />
+                <XAxis dataKey="date" {...xAxisCommon} tickFormatter={(d:any)=>String(d).slice(5)} minTickGap={24} />
+                <YAxis {...yAxisCommon} tickFormatter={(v:any)=>formatMoney(Number(v)||0, baseCurrency)} width={80} />
+                <Tooltip {...tooltipCommon} formatter={(v:any)=>formatMoney(Number(v)||0, baseCurrency)} labelFormatter={(d:any)=>new Date(d).toLocaleDateString()} />
+                <Area {...areaCommon as any} dataKey="value" fill="url(#portfolioGradient)" />
               </AreaChart>
             </ResponsiveContainer>
           )}
