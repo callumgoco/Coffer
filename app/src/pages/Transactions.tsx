@@ -37,6 +37,7 @@ export default function TransactionsPage() {
   const [extraCategories, setExtraCategories] = useState<string[]>([])
   const [catLimit, setCatLimit] = useState<number | undefined>(undefined)
   const [catCurrency, setCatCurrency] = useState<'GBP'|'USD'|'EUR'|'CAD'>('GBP')
+  const [txType, setTxType] = useState<'expense'|'income'>('expense')
 
 
   useEffect(() => {
@@ -70,15 +71,19 @@ export default function TransactionsPage() {
 
   function openNew() {
     setDraft({ date: new Date().toISOString().slice(0,10), merchant: '', category: '', amount: undefined, currency: 'GBP', notes: '' })
+    setTxType('expense')
     setEditOpen(true)
   }
   function openEdit(t: any) {
     setDraft({ ...t })
+    setTxType((t.amount ?? 0) < 0 ? 'expense' : 'income')
     setEditOpen(true)
   }
   async function saveDraft() {
     if (!draft) return
-    const row = { ...draft, id: draft.id || crypto.randomUUID() }
+    const amountVal = Number(draft.amount ?? 0)
+    const signed = txType === 'expense' ? -Math.abs(amountVal) : Math.abs(amountVal)
+    const row = { ...draft, amount: signed, id: draft.id || crypto.randomUUID() }
     await service.upsertTransactions?.([row] as any)
     setEditOpen(false)
     await Promise.all([
@@ -341,7 +346,13 @@ export default function TransactionsPage() {
               <input className="input mt-1" type="date" value={draft.date} onChange={(e)=> setDraft({ ...draft, date: e.target.value })} required />
             </label>
             <label className="text-sm">Amount
-              <input className="input mt-1" type="number" step="0.01" placeholder="0.00" value={draft.amount ?? ''} onChange={(e)=> setDraft({ ...draft, amount: e.target.value === '' ? undefined : Number(e.target.value) })} required />
+              <div className="mt-1 flex items-center gap-2">
+                <select className="select w-32" value={txType} onChange={(e)=> setTxType(e.target.value as any)} aria-label="Transaction type">
+                  <option value="expense">Expense</option>
+                  <option value="income">Income</option>
+                </select>
+                <input className="input flex-1" type="number" step="0.01" placeholder="0.00" value={draft.amount ?? ''} onChange={(e)=> setDraft({ ...draft, amount: e.target.value === '' ? undefined : Number(e.target.value) })} required />
+              </div>
             </label>
             <label className="text-sm col-span-2">Merchant
               <input className="input mt-1" value={draft.merchant} onChange={(e)=> setDraft({ ...draft, merchant: e.target.value })} />
