@@ -31,6 +31,11 @@ export default function TransactionsPage() {
   const [csvOpen, setCsvOpen] = useState(false)
   const csvRef = useRef<HTMLDivElement | null>(null)
 
+  // New category modal state
+  const [catOpen, setCatOpen] = useState(false)
+  const [newCategory, setNewCategory] = useState('')
+  const [extraCategories, setExtraCategories] = useState<string[]>([])
+
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setCsvOpen(false) }
@@ -127,8 +132,9 @@ export default function TransactionsPage() {
     const set = new Set<string>()
     ;(budgets ?? []).forEach(b => b.category && set.add(b.category))
     ;(txs ?? []).forEach(t => t.category && set.add(t.category))
+    extraCategories.forEach(c => c && set.add(c))
     return Array.from(set).sort()
-  }, [txs, budgets])
+  }, [txs, budgets, extraCategories])
 
   const view = useMemo(() => {
     let list = (txs ?? []).slice()
@@ -339,10 +345,13 @@ export default function TransactionsPage() {
               <input className="input mt-1" value={draft.merchant} onChange={(e)=> setDraft({ ...draft, merchant: e.target.value })} />
             </label>
             <label className="text-sm col-span-2">Category
-              <select className="select mt-1" value={draft.category} onChange={(e)=> setDraft({ ...draft, category: e.target.value })}>
-                <option value="">Uncategorized</option>
-                {categories.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <div className="mt-1 flex items-center gap-2">
+                <select className="select flex-1" value={draft.category} onChange={(e)=> setDraft({ ...draft, category: e.target.value })}>
+                  <option value="">Uncategorized</option>
+                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <button type="button" className="btn btn-outline" onClick={() => { setCatOpen(true); setNewCategory('') }}>New</button>
+              </div>
             </label>
             
             <label className="text-sm">Currency
@@ -362,6 +371,25 @@ export default function TransactionsPage() {
             </div>
           </form>
         ) : null}
+      </Modal>
+
+      {/* New Category Modal */}
+      <Modal open={catOpen} onClose={() => setCatOpen(false)} title="New category">
+        <form className="grid grid-cols-1 gap-3" onSubmit={(e)=>{ e.preventDefault();
+          const name = newCategory.trim()
+          if (!name) { setCatOpen(false); return }
+          setExtraCategories(arr => Array.from(new Set([...arr, name])))
+          setDraft(d => d ? { ...d, category: name } : d)
+          setCatOpen(false)
+        }}>
+          <label className="text-sm">Name
+            <input className="input mt-1" autoFocus value={newCategory} onChange={(e)=> setNewCategory(e.target.value)} placeholder="e.g. Subscriptions" />
+          </label>
+          <div className="mt-2 flex justify-end gap-2">
+            <button type="button" className="btn btn-outline" onClick={()=> setCatOpen(false)}>Cancel</button>
+            <button type="submit" className="btn btn-primary">Create</button>
+          </div>
+        </form>
       </Modal>
 
       <Modal open={!!confirmId} onClose={()=> setConfirmId(null)} title="Delete transaction">
