@@ -14,7 +14,6 @@ export interface Transaction {
   merchant: string
   category: string
   amount: number
-  accountId: string
   currency?: CurrencyCode
   notes?: string
 }

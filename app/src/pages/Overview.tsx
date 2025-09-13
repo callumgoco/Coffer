@@ -48,7 +48,9 @@ export default function Overview() {
     const net = cash + inv
     const now = new Date()
     const monthKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
-    const monthSpend = (transactions ?? []).filter(t => (t.date ?? '').startsWith(monthKey)).reduce((s, t) => s + (t.amount < 0 ? convertAmount(-t.amount, ((t as any).currency ?? (accounts ?? []).find(a=>a.id===t.accountId)?.currency ?? baseCurrency) as any, baseCurrency, rates) : 0), 0)
+    const monthSpend = (transactions ?? [])
+      .filter(t => (t.date ?? '').startsWith(monthKey))
+      .reduce((s, t) => s + (t.amount < 0 ? convertAmount(-t.amount, ((t as any).currency ?? baseCurrency) as any, baseCurrency, rates) : 0), 0)
     return { cash, inv, net, monthSpend }
   }, [accounts, assets, holdings, transactions, baseCurrency, rates])
 

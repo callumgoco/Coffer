@@ -87,27 +87,20 @@ export const supabaseService = {
       merchant: r.merchant ?? '',
       category: r.category ?? '',
       amount: Number(r.amount ?? 0),
-      accountId: r.account_id ?? r.accountId ?? '',
       currency: r.currency ?? undefined,
       notes: r.notes ?? undefined,
     }))
   },
   async getBudgets(): Promise<Budget[]> {
-    const [budgetsRaw, txRows, accountsRows] = await Promise.all([
+    const [budgetsRaw, txRows] = await Promise.all([
       selectAll('budgets'),
       selectAll('transactions'),
-      selectAll('accounts'),
     ])
-    const accountsById = new Map(accountsRows.map((a: any) => [a.id, a]))
     return budgetsRaw.map((b: any) => {
       const currency = b.currency ?? undefined
       const spent = txRows
         .filter((t: any) => t.category === b.category)
-        .filter((t: any) => {
-          const acc = accountsById.get(t.account_id ?? t.accountId)
-          if (!acc) return false
-          return currency ? (acc.currency === currency) : true
-        })
+        .filter((t: any) => (currency ? ((t.currency ?? null) === currency) : true))
         .reduce((sum: number, t: any) => sum + (Number(t.amount ?? 0) < 0 ? -Number(t.amount ?? 0) : 0), 0)
       return {
         id: b.id,
@@ -163,7 +156,6 @@ export const supabaseService = {
       merchant: t.merchant,
       category: t.category,
       amount: t.amount,
-      account_id: t.accountId,
       currency: (t as any).currency ?? null,
       notes: t.notes ?? null,
       user_id: uid,

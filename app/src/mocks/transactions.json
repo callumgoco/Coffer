@@ -1,6 +1,6 @@
 [
-  { "id": "tx_1", "date": "2025-09-05", "merchant": "Tesco", "category": "Groceries", "amount": -54.23, "accountId": "acc_chk_1", "notes": "Weekly shop" },
-  { "id": "tx_2", "date": "2025-09-03", "merchant": "Pret", "category": "Eating Out", "amount": -7.50, "accountId": "acc_chk_1" },
-  { "id": "tx_3", "date": "2025-09-01", "merchant": "Payroll", "category": "Income", "amount": 3200.00, "accountId": "acc_chk_1" },
-  { "id": "tx_4", "date": "2025-08-28", "merchant": "TFL", "category": "Transport", "amount": -24.10, "accountId": "acc_chk_1" }
+  { "id": "tx_1", "date": "2025-09-05", "merchant": "Tesco", "category": "Groceries", "amount": -54.23, "currency": "GBP", "notes": "Weekly shop" },
+  { "id": "tx_2", "date": "2025-09-03", "merchant": "Pret", "category": "Eating Out", "amount": -7.50, "currency": "GBP" },
+  { "id": "tx_3", "date": "2025-09-01", "merchant": "Payroll", "category": "Income", "amount": 3200.00, "currency": "GBP" },
+  { "id": "tx_4", "date": "2025-08-28", "merchant": "TFL", "category": "Transport", "amount": -24.10, "currency": "GBP" }
 ]

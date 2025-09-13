@@ -26,16 +26,11 @@ export const mockService = {
   },
   async getTransactions() { return mockDb.transactions },
   async getBudgets() {
-    // compute spent from transactions, matching currency via account
-    const accountsById = new Map(mockDb.accounts.map(a => [a.id, a]))
+    // compute spent from transactions, matching by transaction currency
     return mockDb.budgets.map(b => {
       const spent = mockDb.transactions
         .filter(t => t.category === b.category)
-        .filter(t => {
-          const acc = accountsById.get(t.accountId)
-          if (!acc) return false
-          return b.currency ? acc.currency === b.currency : true
-        })
+        .filter(t => (b.currency ? ((t as any).currency === b.currency) : true))
         .reduce((sum, t) => sum + (t.amount < 0 ? -t.amount : 0), 0)
       return { ...b, spent }
     })

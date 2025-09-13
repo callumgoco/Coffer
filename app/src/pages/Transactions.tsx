@@ -1,6 +1,6 @@
 import Card from '../components/Card'
 import PageHeader from '../components/PageHeader'
-import { useTransactions, useAccounts, useBudgets } from '../hooks/useData'
+import { useTransactions, useBudgets } from '../hooks/useData'
 import CSVImport from '../components/CSVImport'
 import { useQueryClient } from '@tanstack/react-query'
 import { service } from '../services/adapters'
@@ -16,10 +16,7 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'rec
 
 export default function TransactionsPage() {
   const { data: txs, isLoading } = useTransactions()
-  const { data: accounts } = useAccounts()
   const { data: budgets } = useBudgets()
-  const accMap = new Map((accounts ?? []).map((a) => [a.id, a.name]))
-  const accCurrency = new Map((accounts ?? []).map((a) => [a.id, a.currency]))
   const { baseCurrency } = useCurrencyStore()
   const { data: rates } = useRates(baseCurrency)
 
@@ -29,12 +26,11 @@ export default function TransactionsPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [category, setCategory] = useState<string>('')
   const [editOpen, setEditOpen] = useState(false)
-  const [draft, setDraft] = useState<{ id?: string; date: string; merchant: string; category: string; amount?: number; accountId: string; currency?: 'GBP'|'USD'|'EUR'; notes?: string } | null>(null)
+  const [draft, setDraft] = useState<{ id?: string; date: string; merchant: string; category: string; amount?: number; currency?: 'GBP'|'USD'|'EUR'|'CAD'; notes?: string } | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const [csvOpen, setCsvOpen] = useState(false)
   const csvRef = useRef<HTMLDivElement | null>(null)
-  const [creatingAcc, setCreatingAcc] = useState(false)
-  const [newAcc, setNewAcc] = useState<{ name: string; type: 'checking'|'savings'|'credit'|'brokerage'|'cash'; currency: 'GBP'|'USD'|'EUR'|'CAD' } | null>(null)
+
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setCsvOpen(false) }
@@ -48,27 +44,16 @@ export default function TransactionsPage() {
   }, [csvOpen])
 
   async function handleImport(rows: Record<string, string>[]) {
-    // Minimal mapping step: accept headers id,date,merchant,category,amount,accountId,currency,notes
-    const mapped = rows.map((r) => {
-      const incomingAccountId = r.accountId ?? r.account_id ?? ''
-      const validAccountId = (accounts ?? []).some(a => a.id === incomingAccountId)
-        ? incomingAccountId
-        : (accounts?.[0]?.id ?? '')
-      return {
-        id: r.id || crypto.randomUUID(),
-        date: r.date,
-        merchant: r.merchant ?? '',
-        category: r.category ?? '',
-        amount: Number(r.amount ?? 0),
-        accountId: validAccountId,
-        currency: (r as any).currency as any,
-        notes: r.notes ?? undefined,
-      }
-    })
-    if ((accounts ?? []).length === 0) {
-      alert('No accounts exist. Please create an account first before importing transactions.')
-      return
-    }
+    // Accept headers id,date,merchant,category,amount,currency,notes
+    const mapped = rows.map((r) => ({
+      id: r.id || crypto.randomUUID(),
+      date: r.date,
+      merchant: r.merchant ?? '',
+      category: r.category ?? '',
+      amount: Number(r.amount ?? 0),
+      currency: (r as any).currency as any,
+      notes: r.notes ?? undefined,
+    }))
     await service.upsertTransactions?.(mapped as any)
     await Promise.all([
       qc.invalidateQueries({ queryKey: ['transactions'] }),
@@ -77,7 +62,7 @@ export default function TransactionsPage() {
   }
 
   function openNew() {
-    setDraft({ date: new Date().toISOString().slice(0,10), merchant: '', category: '', amount: undefined, accountId: accounts?.[0]?.id ?? '', currency: 'GBP', notes: '' })
+    setDraft({ date: new Date().toISOString().slice(0,10), merchant: '', category: '', amount: undefined, currency: 'GBP', notes: '' })
     setEditOpen(true)
   }
   function openEdit(t: any) {
@@ -86,15 +71,7 @@ export default function TransactionsPage() {
   }
   async function saveDraft() {
     if (!draft) return
-    // Ensure accountId is valid to avoid FK constraint error
-    let accountId = draft.accountId
-    const hasValidAccount = (accounts ?? []).some(a => a.id === accountId)
-    if (!hasValidAccount) accountId = accounts?.[0]?.id ?? ''
-    if (!accountId) {
-      alert('No accounts found. Please create an account first before saving a transaction.')
-      return
-    }
-    const row = { ...draft, accountId, id: draft.id || crypto.randomUUID() }
+    const row = { ...draft, id: draft.id || crypto.randomUUID() }
     await service.upsertTransactions?.([row] as any)
     setEditOpen(false)
     await Promise.all([
@@ -112,19 +89,10 @@ export default function TransactionsPage() {
     ])
   }
 
-  async function createAccountInline() {
-    if (!newAcc) return
-    const id = crypto.randomUUID()
-    const row = { id, name: newAcc.name.trim() || 'New account', type: newAcc.type, balance: 0, currency: newAcc.currency }
-    await service.upsertAccounts?.([row] as any)
-    await qc.invalidateQueries({ queryKey: ['accounts'] })
-    setCreatingAcc(false)
-    setNewAcc(null)
-    setDraft(d => d ? { ...d, accountId: id } : d)
-  }
+  
 
   function downloadTemplate() {
-    const headers = ['id','date','merchant','category','amount','accountId','currency','notes']
+    const headers = ['id','date','merchant','category','amount','currency','notes']
     const csv = headers.join(',') + '\n'
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
@@ -136,10 +104,10 @@ export default function TransactionsPage() {
   }
 
   function exportCsv(rows: typeof view) {
-    const headers = ['id','date','merchant','category','amount','accountId','currency','notes']
+    const headers = ['id','date','merchant','category','amount','currency','notes']
     const lines = [headers.join(',')]
     for (const r of rows) {
-      const vals = [r.id, r.date, r.merchant, r.category, String(r.amount), r.accountId, (r as any).currency ?? '', r.notes ?? '']
+      const vals = [r.id, r.date, r.merchant, r.category, String(r.amount), (r as any).currency ?? '', r.notes ?? '']
       lines.push(vals.map(v => {
         if (v == null) return ''
         const s = String(v)
@@ -168,8 +136,7 @@ export default function TransactionsPage() {
     if (qNorm) {
       list = list.filter(t =>
         t.merchant.toLowerCase().includes(qNorm) ||
-        t.category.toLowerCase().includes(qNorm) ||
-        (accMap.get(t.accountId)?.toLowerCase() ?? '').includes(qNorm)
+        t.category.toLowerCase().includes(qNorm)
       )
     }
     if (category) list = list.filter(t => t.category === category)
@@ -181,7 +148,7 @@ export default function TransactionsPage() {
       return a.category.localeCompare(b.category) * dir
     })
     return list
-  }, [txs, q, sortBy, sortDir, category, accMap])
+  }, [txs, q, sortBy, sortDir, category])
 
   const metrics = useMemo(() => {
     const now = new Date()
@@ -189,7 +156,7 @@ export default function TransactionsPage() {
     let monthOut = 0
     let monthIn = 0
     ;(txs ?? []).forEach(t => {
-      const cur = (t as any).currency ?? accCurrency.get(t.accountId) ?? baseCurrency
+      const cur = (t as any).currency ?? baseCurrency
       const amountBase = convertAmount(Math.abs(t.amount), cur as any, baseCurrency, rates)
       if ((t.date ?? '').startsWith(monthKey)) {
         if (t.amount < 0) monthOut += amountBase
@@ -199,18 +166,18 @@ export default function TransactionsPage() {
     const count = (txs ?? []).length
     const avgOut = monthOut > 0 ? (monthOut / Math.max(1, (txs ?? []).filter(t => (t.date ?? '').startsWith(monthKey) && t.amount < 0).length)) : 0
     return { monthOut, monthIn, net: monthIn - monthOut, count, avgOut }
-  }, [txs, baseCurrency, rates, accCurrency])
+  }, [txs, baseCurrency, rates])
 
   const spendSeries = useMemo(() => {
     const map = new Map<string, number>()
     ;(txs ?? []).forEach(t => {
       if (t.amount >= 0) return
-      const cur = (t as any).currency ?? accCurrency.get(t.accountId) ?? baseCurrency
+      const cur = (t as any).currency ?? baseCurrency
       const valBase = convertAmount(-t.amount, cur as any, baseCurrency, rates)
       map.set(t.date, (map.get(t.date) ?? 0) + valBase)
     })
     return Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0])).map(([date, value])=>({ date, value }))
-  }, [txs, baseCurrency, rates, accCurrency])
+  }, [txs, baseCurrency, rates])
 
   return (
     <>
@@ -218,7 +185,7 @@ export default function TransactionsPage() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search merchant/category/account"
+          placeholder="Search merchant/category"
           className="input"
           aria-label="Search transactions"
         />
@@ -307,24 +274,22 @@ export default function TransactionsPage() {
       <div className="mt-4">
         {isLoading ? (
           <div className="space-y-2">
-            <div className="hidden md:grid md:grid-cols-8 items-center border-b border-border pb-2 text-xs text-subtler gap-2">
+            <div className="hidden md:grid md:grid-cols-7 items-center border-b border-border pb-2 text-xs text-subtler gap-2">
               <div>Date</div>
               <div>Merchant</div>
               <div>Category</div>
               <div className="text-right">Amount</div>
               <div>Currency</div>
-              <div>Account</div>
               <div>Notes</div>
               <div className="text-right">Actions</div>
             </div>
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex items-center justify-between md:grid md:grid-cols-8 border-b border-border py-2 gap-2">
+              <div key={i} className="flex items-center justify-between md:grid md:grid-cols-7 border-b border-border py-2 gap-2">
                 <div><Skeleton className="h-4 w-24 rounded" /></div>
                 <div><Skeleton className="h-4 w-28 rounded" /></div>
                 <div><Skeleton className="h-4 w-20 rounded" /></div>
                 <div className="text-right"><Skeleton className="h-4 w-16 rounded ml-auto" /></div>
                 <div><Skeleton className="h-4 w-16 rounded" /></div>
-                <div><Skeleton className="h-4 w-24 rounded" /></div>
                 <div className="truncate"><Skeleton className="h-4 w-32 rounded" /></div>
                 <div className="flex justify-end gap-2"><Skeleton className="h-8 w-28 rounded" /></div>
               </div>
@@ -334,24 +299,22 @@ export default function TransactionsPage() {
           <EmptyState title="No transactions" hint="Import a CSV or add some via Supabase." />
         ) : (
           <>
-            <div className="hidden md:grid md:grid-cols-8 items-center border-b border-border pb-2 text-xs text-subtler gap-2">
+            <div className="hidden md:grid md:grid-cols-7 items-center border-b border-border pb-2 text-xs text-subtler gap-2">
               <div>Date</div>
               <div>Merchant</div>
               <div>Category</div>
               <div className="text-right">Amount</div>
               <div>Currency</div>
-              <div>Account</div>
               <div>Notes</div>
               <div className="text-right">Actions</div>
             </div>
             {view.map((t) => (
-              <div key={t.id} className="flex items-center justify-between md:grid md:grid-cols-8 border-b border-border py-2 gap-2">
+              <div key={t.id} className="flex items-center justify-between md:grid md:grid-cols-7 border-b border-border py-2 gap-2">
                 <div>{t.date}</div>
                 <div className="truncate">{t.merchant}</div>
                 <div className="truncate">{t.category}</div>
                 <div className={`text-right ${t.amount < 0 ? 'text-danger' : 'text-success'}`}>{t.amount.toFixed(2)}</div>
                 <div>{(t as any).currency ?? ''}</div>
-                <div className="truncate">{accMap.get(t.accountId) ?? t.accountId}</div>
                 <div className="truncate">{t.notes ?? ''}</div>
                 <div className="flex justify-end gap-2">
                   <button className="btn btn-outline" onClick={() => openEdit(t)}>Edit</button>
@@ -381,36 +344,7 @@ export default function TransactionsPage() {
                 {categories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </label>
-            <label className="text-sm col-span-2">Account
-              <div className="mt-1 flex items-center gap-2">
-                <select className="select flex-1" value={draft.accountId} onChange={(e)=> setDraft({ ...draft, accountId: e.target.value })}>
-                  {(accounts ?? []).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                </select>
-                <button type="button" className="btn btn-outline" onClick={()=> { setCreatingAcc(v=>!v); setNewAcc({ name: '', type: 'checking', currency: 'GBP' }) }}>New</button>
-              </div>
-              {creatingAcc ? (
-                <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-2">
-                  <input className="input" placeholder="Name" value={newAcc?.name ?? ''} onChange={(e)=> setNewAcc(p=>({ ...(p as any), name: e.target.value }))} />
-                  <select className="select" value={newAcc?.type ?? 'checking'} onChange={(e)=> setNewAcc(p=>({ ...(p as any), type: e.target.value as any }))}>
-                    <option value="checking">Checking</option>
-                    <option value="savings">Savings</option>
-                    <option value="credit">Credit</option>
-                    <option value="brokerage">Brokerage</option>
-                    <option value="cash">Cash</option>
-                  </select>
-                  <select className="select" value={newAcc?.currency ?? 'GBP'} onChange={(e)=> setNewAcc(p=>({ ...(p as any), currency: e.target.value as any }))}>
-                    <option value="GBP">GBP</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="CAD">CAD</option>
-                  </select>
-                  <div className="md:col-span-3 flex justify-end gap-2">
-                    <button type="button" className="btn btn-outline" onClick={()=> { setCreatingAcc(false); setNewAcc(null) }}>Cancel</button>
-                    <button type="button" className="btn btn-primary" onClick={createAccountInline}>Create</button>
-                  </div>
-                </div>
-              ) : null}
-            </label>
+            
             <label className="text-sm">Currency
               <select className="select mt-1" value={draft.currency} onChange={(e)=> setDraft({ ...draft, currency: e.target.value as any })}>
                 <option value="GBP">GBP</option>
