@@ -57,11 +57,9 @@ export default function InvestmentsPage() {
   // Portfolio chart state
   type Timeframe = '1M' | '3M' | '6M' | '1Y' | 'ALL'
   type Resolution = 'D' | 'W' | 'M'
-  type SeriesMode = 'UNREALIZED' | 'TOTAL'
   const [timeframe, setTimeframe] = useState<Timeframe>('3M')
   const [resolution, setResolution] = useState<Resolution>('D')
   const [seriesLoading, setSeriesLoading] = useState(false)
-  const [seriesMode, setSeriesMode] = useState<SeriesMode>('UNREALIZED')
   const [portfolioSeries, setPortfolioSeries] = useState<Array<{ date: string; value: number }>>([])
   const [portfolioSeriesTotal, setPortfolioSeriesTotal] = useState<Array<{ date: string; value: number }>>([])
   const snapshotAttemptedRef = useRef<string | null>(null)
@@ -325,17 +323,13 @@ export default function InvestmentsPage() {
       {/* Portfolio chart */}
       <Card className="mt-4">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-medium">{seriesMode === 'UNREALIZED' ? 'Unrealized gains' : 'Total value'}</h2>
+          <h2 className="text-lg font-medium">Total value</h2>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 flex-nowrap">
               {(['1M','3M','6M','1Y','ALL'] as any).map((tf: '1M'|'3M'|'6M'|'1Y'|'ALL') => (
                 <button key={tf} className={`btn btn-sm ${timeframe === tf ? 'btn-primary' : ''}`} onClick={() => setTimeframe(tf)}>{tf}</button>
               ))}
             </div>
-            <select className="input input-sm" value={seriesMode} onChange={e=>setSeriesMode(e.target.value as any)}>
-              <option value="UNREALIZED">Unrealized</option>
-              <option value="TOTAL">Total value</option>
-            </select>
             <select className="input input-sm" value={resolution} onChange={e=>setResolution(e.target.value as any)}>
               <option value="D">Daily</option>
               <option value="W">Weekly</option>
@@ -348,11 +342,11 @@ export default function InvestmentsPage() {
             <div className="h-full flex items-center justify-center"><Skeleton className="h-6 w-40 rounded" /></div>
           ) : (data ?? []).length === 0 ? (
             <EmptyState title="No holdings" hint="Add holdings to see your portfolio chart." />
-          ) : portfolioSeries.length === 0 ? (
+          ) : portfolioSeriesTotal.length === 0 ? (
             <div className="h-full flex items-center justify-center text-sm text-subtle">No chart data</div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={seriesMode === 'UNREALIZED' ? portfolioSeries : portfolioSeriesTotal}>
+              <AreaChart data={portfolioSeriesTotal}>
                 <defs>
                   <linearGradient id="portfolioGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="rgb(var(--accent))" stopOpacity="0.35" />
