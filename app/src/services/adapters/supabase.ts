@@ -118,7 +118,7 @@ export const supabaseService = {
       symbol: r.symbol,
       quantity: Number(r.quantity ?? 0),
       averageCost: Number(r.average_cost ?? r.averageCost ?? 0),
-      lastPrice: r.last_price ?? undefined,
+      lastPrice: Number.isFinite(Number(r.last_price ?? (r as any).lastPrice)) ? Number(r.last_price ?? (r as any).lastPrice) : undefined,
       region: r.region ?? undefined,
       currency: r.currency ?? undefined,
     }))
