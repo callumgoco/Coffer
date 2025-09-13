@@ -35,6 +35,8 @@ export default function TransactionsPage() {
   const [catOpen, setCatOpen] = useState(false)
   const [newCategory, setNewCategory] = useState('')
   const [extraCategories, setExtraCategories] = useState<string[]>([])
+  const [catLimit, setCatLimit] = useState<number | undefined>(undefined)
+  const [catCurrency, setCatCurrency] = useState<'GBP'|'USD'|'EUR'|'CAD'>('GBP')
 
 
   useEffect(() => {
@@ -350,7 +352,7 @@ export default function TransactionsPage() {
                   <option value="">Uncategorized</option>
                   {categories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-                <button type="button" className="btn btn-outline" onClick={() => { setCatOpen(true); setNewCategory('') }}>New</button>
+                <button type="button" className="btn btn-outline" onClick={() => { setCatOpen(true); setNewCategory(''); setCatLimit(undefined); setCatCurrency(baseCurrency as any) }}>New</button>
               </div>
             </label>
             
@@ -375,17 +377,34 @@ export default function TransactionsPage() {
 
       {/* New Category Modal */}
       <Modal open={catOpen} onClose={() => setCatOpen(false)} title="New category">
-        <form className="grid grid-cols-1 gap-3" onSubmit={(e)=>{ e.preventDefault();
+        <form className="grid grid-cols-1 md:grid-cols-2 gap-3" onSubmit={async (e)=>{ e.preventDefault();
           const name = newCategory.trim()
           if (!name) { setCatOpen(false); return }
+          // Upsert a matching budget row (optional limit)
+          try {
+            const row = { id: crypto.randomUUID(), category: name, limit: catLimit ?? 0, currency: catCurrency }
+            await service.upsertBudgets?.([row] as any)
+            await qc.invalidateQueries({ queryKey: ['budgets'] })
+          } catch {}
           setExtraCategories(arr => Array.from(new Set([...arr, name])))
           setDraft(d => d ? { ...d, category: name } : d)
           setCatOpen(false)
         }}>
-          <label className="text-sm">Name
+          <label className="text-sm md:col-span-2">Name
             <input className="input mt-1" autoFocus value={newCategory} onChange={(e)=> setNewCategory(e.target.value)} placeholder="e.g. Subscriptions" />
           </label>
-          <div className="mt-2 flex justify-end gap-2">
+          <label className="text-sm">Limit (optional)
+            <input className="input mt-1" type="number" step="0.01" placeholder="0.00" value={catLimit ?? ''} onChange={(e)=> setCatLimit(e.target.value === '' ? undefined : Number(e.target.value))} />
+          </label>
+          <label className="text-sm">Currency
+            <select className="select mt-1" value={catCurrency} onChange={(e)=> setCatCurrency(e.target.value as any)}>
+              <option value="GBP">GBP</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="CAD">CAD</option>
+            </select>
+          </label>
+          <div className="md:col-span-2 mt-2 flex justify-end gap-2">
             <button type="button" className="btn btn-outline" onClick={()=> setCatOpen(false)}>Cancel</button>
             <button type="submit" className="btn btn-primary">Create</button>
           </div>
