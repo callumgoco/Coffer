@@ -199,8 +199,12 @@ export default function InvestmentsPage() {
             const sym = h.symbol
             const arr = arrays[sym]
             if (!arr || arr.length === 0) {
-              // Fallback to averageCost if no series
-              const fallback = convertAmount(h.averageCost * h.quantity, (h as any).currency ?? baseCurrency, baseCurrency, rates)
+              // Fallback to current lastPrice when no historical series; if missing, use averageCost
+              const priceToUse = (Number.isFinite((h as any).lastPrice) && (h as any).lastPrice > 0)
+                ? (h as any).lastPrice as number
+                : h.averageCost
+              const fallbackNative = priceToUse * h.quantity
+              const fallback = convertAmount(fallbackNative, (h as any).currency ?? baseCurrency, baseCurrency, rates)
               valueThisDate += fallback
               const costNative = h.averageCost * h.quantity
               costThisDate += convertAmount(costNative, (h as any).currency ?? baseCurrency, baseCurrency, rates)
@@ -210,7 +214,8 @@ export default function InvestmentsPage() {
             while (idx + 1 < arr.length && arr[idx + 1].date <= d) idx++
             pointers[sym] = idx
             const close = arr[idx]?.date <= d ? arr[idx]?.close : arr[0]?.close
-            const holdingValueNative = (Number.isFinite(close) ? close : h.averageCost) * h.quantity
+            const fallbackPrice = (Number.isFinite((h as any).lastPrice) && (h as any).lastPrice > 0) ? (h as any).lastPrice : h.averageCost
+            const holdingValueNative = (Number.isFinite(close) ? (close as number) : fallbackPrice) * h.quantity
             const holdingValue = convertAmount(holdingValueNative, (h as any).currency ?? baseCurrency, baseCurrency, rates)
             valueThisDate += holdingValue
             const costNative = h.averageCost * h.quantity
